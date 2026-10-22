@@ -21,7 +21,9 @@ Migración de la base relacional de una tienda en línea de tecnología (**Tecno
 │   ├── instalar.bat               # doble clic: instala y configura SQL Server + MongoDB (pide admin)
 │   ├── instalar-entorno.ps1       # script de PowerShell que hace el trabajo
 │   ├── diagnosticar.bat           # doble clic: diagnostica el entorno y repara lo que pueda
-│   └── diagnosticar.ps1           # script de diagnóstico/reparación (guarda diagnostico.txt)
+│   ├── diagnosticar.ps1           # script de diagnóstico/reparación (guarda diagnostico.txt)
+│   ├── iniciar-servicios.bat      # doble clic: inicia SQL Server y MongoDB (pide admin)
+│   └── detener-servicios.bat      # doble clic: detiene SQL Server y MongoDB (pide admin)
 ├── sql/
 │   ├── 01_crear_bd.sql            # DDL: base TecnoHogarDB, 10 tablas, PK/FK/CHECK/UNIQUE, índices
 │   └── 02_cargar_datos.sql        # 5.170 INSERTs (generado con src/datos/generarDatos.ts)
@@ -41,7 +43,8 @@ Migración de la base relacional de una tienda en línea de tecnología (**Tecno
 ├── client/app.ts                  # lógica de la interfaz (se compila a public/app.js, ignorado por git)
 ├── public/                        # index.html + styles.css de la interfaz
 ├── consultas/consultas_mongosh.js # las 8 consultas listas para pegar en mongosh o MongoDB Compass (generado)
-└── evidencias/                    # reportes de verificación y de consultas generados por el proyecto
+├── evidencias/                    # reportes de verificación y de consultas generados por el proyecto
+└── .gitattributes                 # fuerza CRLF en los .bat y .ps1 (si no, cmd.exe puede fallar al ejecutarlos)
 ```
 
 ## Requisitos
@@ -79,6 +82,34 @@ Parámetros opcionales, desde PowerShell como administrador:
 El script se puede ejecutar varias veces sin problema: lo que ya está instalado se omite y la configuración se vuelve a aplicar.
 
 Si algo queda mal configurado (por ejemplo, después de reiniciar el computador), ejecute **`instalacion/diagnosticar.bat`**: revisa SQL Server y MongoDB, intenta repararlos (reinicia servicios, corrige TCP/IP, registra el servicio de MongoDB si falta) y guarda el detalle en `instalacion/diagnostico.txt`.
+
+### Encender y apagar los servicios
+
+SQL Server y MongoDB quedan corriendo en segundo plano como servicios de Windows y arrancan solos con el computador; no se apagan solos. Para no dejarlos consumiendo recursos cuando no está usando el proyecto, hay dos scripts de doble clic (piden permisos de administrador):
+
+- **`instalacion/iniciar-servicios.bat`**: inicia `MSSQL$SQLEXPRESS` y `MongoDB`.
+- **`instalacion/detener-servicios.bat`**: los detiene.
+
+Los comandos equivalentes, en PowerShell **como administrador**:
+
+```powershell
+Stop-Service 'MSSQL$SQLEXPRESS', MongoDB    # detener
+Start-Service 'MSSQL$SQLEXPRESS', MongoDB   # iniciar
+Get-Service 'MSSQL$SQLEXPRESS', MongoDB     # ver el estado
+```
+
+Para que no arranquen solos con Windows (y volver a encenderlos solo cuando los necesite):
+
+```powershell
+Set-Service 'MSSQL$SQLEXPRESS' -StartupType Manual
+Set-Service MongoDB -StartupType Manual
+```
+
+Para que vuelvan a arrancar automáticamente, use `-StartupType Automatic` en lugar de `Manual`.
+
+Alternativa gráfica: **Win + R** → escriba `services.msc` → busque *SQL Server (SQLEXPRESS)* y *MongoDB Server*, donde puede iniciar, detener y cambiar el tipo de inicio con clic derecho → Propiedades.
+
+> Si los dejó en `Manual`, recuerde iniciarlos (con el script o con `Start-Service`) antes de abrir la interfaz web o de ejecutar cualquier comando del proyecto.
 
 <details><summary>Instalación manual (si prefiere no usar el script)</summary>
 
