@@ -14,7 +14,7 @@ export async function ejecutarPipeline(db: Db, coleccion: string, pipeline: Docu
   return { filas: filas.slice(0, MAX_FILAS), total: filas.length, ms: Math.round(performance.now() - t0), truncado: filas.length > MAX_FILAS };
 }
 
-// ------------------------------------------------------------------ evidencias en Markdown
+
 function celda(v: unknown): string {
   if (v instanceof Date) return v.toISOString().slice(0, 10);
   if (typeof v === "number") return Number.isInteger(v) && Math.abs(v) >= 10_000 ? v.toLocaleString("es-CO") : String(v);
@@ -43,7 +43,7 @@ export async function ejecutarTodas(db: Db, carpeta: string, ids?: number[], log
   return ruta;
 }
 
-/** Genera consultas/consultas_mongosh.js con las 8 consultas, para mongosh o Compass. */
+
 export function generarJs(ruta: string): void {
   const out = [
     "// Consultas de negocio - TecnoHogar (generado desde src/consultas/pipelines.ts)",

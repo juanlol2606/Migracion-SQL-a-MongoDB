@@ -1,6 +1,5 @@
 /**
- * Migración TecnoHogarDB (SQL Server)  ->  tecnohogar (MongoDB)
- *
+  
  *  1. EXTRACT   : lee las 10 tablas de SQL Server.
  *  2. TRANSFORM : convierte tipos y reorganiza las 10 tablas en 6 colecciones:
  *
@@ -59,7 +58,6 @@ function agruparPor<T, K>(filas: T[], clave: (f: T) => K): Map<K, T[]> {
 export async function extraer(fuente: FuenteSql, log: Log): Promise<DatosRelacionales> {
   const datos = {} as DatosRelacionales;
   for (const tabla of TABLAS) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (datos as any)[tabla] = await fuente.consultar(`SELECT * FROM ${tabla}`);
     log(`  [extract] ${tabla.padEnd(14)} ${String(datos[tabla].length).padStart(6)} filas`);
   }
@@ -68,7 +66,7 @@ export async function extraer(fuente: FuenteSql, log: Log): Promise<DatosRelacio
 
 // ------------------------------------------------------------------ 2. TRANSFORM
 export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
-  // --- categorias y proveedores: entidades independientes, compartidas por muchos productos
+  //categorias y proveedores
   const categorias = d.Categorias.map((c) => sinNulos({ _id: c.categoria_id, nombre: c.nombre, descripcion: c.descripcion ?? undefined }));
   const proveedores = d.Proveedores.map((p) => ({
     _id: p.proveedor_id, nombre: p.nombre, nit: p.nit,
@@ -76,7 +74,7 @@ export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
     ubicacion: { ciudad: p.ciudad, pais: p.pais },
   }));
 
-  // --- resumen de reseñas por producto (patrón computado: evita recalcular en cada lectura)
+  
   const resumenResenas = new Map<number, { suma: number; n: number }>();
   for (const r of d.Resenas) {
     const a = resumenResenas.get(r.producto_id) ?? { suma: 0, n: 0 };
@@ -89,13 +87,13 @@ export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
       _id: p.producto_id, sku: p.sku, nombre: p.nombre, descripcion: p.descripcion ?? undefined,
       precio: num(p.precio), costo: num(p.costo), stock: p.stock, activo: Boolean(p.activo),
       fecha_creacion: fecha(p.fecha_creacion),
-      categoria_id: p.categoria_id,   // REFERENCING -> categorias
-      proveedor_id: p.proveedor_id,   // REFERENCING -> proveedores
+      categoria_id: p.categoria_id,   
+      proveedor_id: p.proveedor_id,   
       calificacion: { promedio: a ? Math.round((a.suma / a.n) * 100) / 100 : null, total_resenas: a?.n ?? 0 },
     });
   });
 
-  // --- clientes + direcciones (EMBEDDING: uno-a-pocos, se consultan juntos)
+  //clientes + direcciones 
   const direccionPorId = new Map<number, DireccionEmb>();
   for (const x of d.Direcciones) {
     direccionPorId.set(x.direccion_id, sinNulos({
@@ -113,7 +111,7 @@ export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
       .map((x) => direccionPorId.get(x.direccion_id)!),
   }));
 
-  // --- pedidos + detalle + pago + envío (EMBEDDING: el pedido es la unidad de lectura)
+  //pedidos + detalle + pago + envío 
   const productoPorId = new Map(d.Productos.map((p) => [p.producto_id, p]));
   const itemsPorPedido = agruparPor(d.DetallePedido, (x) => x.pedido_id);
   const pagoPorPedido = new Map(d.Pagos.map((x) => [x.pedido_id, x]));
@@ -126,8 +124,8 @@ export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
         const prod = productoPorId.get(x.producto_id)!;
         return {
           detalle_id: x.detalle_id,
-          producto_id: x.producto_id,               // REFERENCING -> productos (datos vivos)
-          sku: prod.sku, nombre: prod.nombre,       // snapshot: nombre al momento de la compra
+          producto_id: x.producto_id,               
+          sku: prod.sku, nombre: prod.nombre,       
           cantidad: x.cantidad, precio_unitario: num(x.precio_unitario),
           descuento: num(x.descuento), subtotal: num(x.subtotal),
         };
@@ -135,10 +133,10 @@ export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
     const { tipo: _t, es_principal: _e, ...direccionEnvio } = direccionPorId.get(p.direccion_id)!;
     const doc: PedidoDoc = {
       _id: p.pedido_id,
-      cliente_id: p.cliente_id,                     // REFERENCING -> clientes
+      cliente_id: p.cliente_id,                     
       fecha_pedido: fecha(p.fecha_pedido),
       estado: p.estado,
-      direccion_envio: direccionEnvio,              // snapshot de la dirección usada
+      direccion_envio: direccionEnvio,              
       items,
       resumen: {
         num_items: items.length,
@@ -164,11 +162,11 @@ export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
     return doc;
   });
 
-  // --- reseñas: crecen sin límite -> colección aparte con referencias
+  
   const resenas = d.Resenas.map((r) => sinNulos({
     _id: r.resena_id,
-    producto_id: r.producto_id,                     // REFERENCING -> productos
-    cliente_id: r.cliente_id,                       // REFERENCING -> clientes
+    producto_id: r.producto_id,                     
+    cliente_id: r.cliente_id,                       
     calificacion: Number(r.calificacion), comentario: r.comentario ?? undefined, fecha: fecha(r.fecha),
   }));
 
@@ -207,7 +205,7 @@ export const INDICES: Record<string, IndexDescription[]> = {
 export async function cargar(db: Db, col: ColeccionesMongo, log: Log, usarValidador = true): Promise<void> {
   const existentes = new Set((await db.listCollections({}, { nameOnly: true }).toArray()).map((c) => c.name));
   for (const nombre of Object.keys(col)) {
-    if (existentes.has(nombre)) await db.dropCollection(nombre); // idempotente: se puede ejecutar varias veces
+    if (existentes.has(nombre)) await db.dropCollection(nombre); 
   }
   if (usarValidador) await db.createCollection("pedidos", { validator: VALIDADOR_PEDIDOS });
   for (const [nombre, docs] of Object.entries(col) as [string, Document[]][]) {

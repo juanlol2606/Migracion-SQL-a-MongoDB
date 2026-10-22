@@ -1,7 +1,3 @@
-/**
- * Servidor de la interfaz web: npm run dev  ->  http://localhost:3000
- * Expone una API REST que usa los mismos módulos de migración, verificación y consultas que la consola.
- */
 import http from "http";
 import path from "path";
 import express, { type Request, type Response } from "express";
@@ -22,10 +18,10 @@ app.use(express.static(config.rutas.publico));
 const COLECCIONES = ["clientes", "pedidos", "productos", "resenas", "categorias", "proveedores"];
 const mensajeError = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-// ------------------------------------------------------------------ trabajos largos con avance en vivo
+
 let trabajoEnCurso: string | null = null;
 
-/** Ejecuta una tarea larga enviando cada línea de log al navegador (NDJSON: una línea JSON por evento). */
+
 async function streaming(res: Response, nombre: string, tarea: (log: (m: string) => void) => Promise<unknown>) {
   if (trabajoEnCurso) {
     res.status(409).json({ error: `Ya se está ejecutando: ${trabajoEnCurso}` });
@@ -48,7 +44,7 @@ async function streaming(res: Response, nombre: string, tarea: (log: (m: string)
   }
 }
 
-// ------------------------------------------------------------------ estado de las dos bases
+// estado de las dos bases
 app.get("/api/estado", async (_req, res) => {
   const estado = {
     destino: {
@@ -85,7 +81,7 @@ app.get("/api/estado", async (_req, res) => {
   res.json(estado);
 });
 
-// ------------------------------------------------------------------ procesos
+//  procesos
 app.post("/api/sql/instalar", (_req, res) =>
   streaming(res, "instalación de SQL Server", async (log) => {
     for (const archivo of ["01_crear_bd.sql", "02_cargar_datos.sql"]) {
@@ -118,7 +114,7 @@ app.post("/api/verificar", (_req, res) =>
     }
   }));
 
-// ------------------------------------------------------------------ consultas
+//  consultas
 app.get("/api/consultas", (_req, res) => {
   res.json(CONSULTAS.map(({ pipeline, ...c }) => ({ ...c, texto: aMongosh(pipeline) })));
 });
@@ -144,7 +140,7 @@ app.post("/api/consultas/evidencias", async (_req, res) => {
   }
 });
 
-// ------------------------------------------------------------------ explorador de colecciones
+// explorador de colecciones
 app.get("/api/colecciones/:nombre", async (req, res) => {
   const { nombre } = req.params;
   if (!COLECCIONES.includes(nombre)) return res.status(404).json({ error: "Colección no encontrada" });
@@ -163,8 +159,7 @@ app.get("/api/colecciones/:nombre", async (req, res) => {
   }
 });
 
-// Se escucha en IPv4 (127.0.0.1) y en IPv6 (::1): según el equipo, el navegador resuelve "localhost" a uno u otro.
-// Solo direcciones locales: la interfaz no queda expuesta a la red.
+
 function escuchar(host: string, obligatorio: boolean): Promise<boolean> {
   return new Promise((resolve) => {
     const servidor = http.createServer(app);
@@ -175,7 +170,7 @@ function escuchar(host: string, obligatorio: boolean): Promise<boolean> {
         process.exit(1);
       }
       if (obligatorio) { console.error(`[X] No se pudo iniciar el servidor en ${host}: ${e.message}`); process.exit(1); }
-      resolve(false); // IPv6 deshabilitado en el equipo: se ignora
+      resolve(false); 
     });
     servidor.listen(config.puerto, host, () => resolve(true));
   });

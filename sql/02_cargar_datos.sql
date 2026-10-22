@@ -1,10 +1,10 @@
-/* Script 02: carga de datos de TecnoHogarDB (generado por src/datos/generarDatos.ts) */
+
 USE TecnoHogarDB;
 GO
 SET NOCOUNT ON;
 GO
 
-/* ---- Categorias: 12 registros ---- */
+
 INSERT INTO Categorias (categoria_id, nombre, descripcion) VALUES
 (1, N'Celulares', N'Smartphones y teléfonos básicos'),
 (2, N'Computadores', N'Portátiles, escritorio y tabletas'),
@@ -20,7 +20,7 @@ INSERT INTO Categorias (categoria_id, nombre, descripcion) VALUES
 (12, N'Oficina', N'Impresoras, sillas y escritorios');
 GO
 
-/* ---- Proveedores: 25 registros ---- */
+
 INSERT INTO Proveedores (proveedor_id, nombre, nit, email, telefono, ciudad, pais) VALUES
 (1, N'Orbis Andina Importaciones', N'900257332-5', N'ventas1@proveedor1.com', N'6034590519', N'Cartagena', N'Colombia'),
 (2, N'Orbis Digital S.A.', N'900893852-7', N'ventas2@proveedor2.com', N'6037630136', N'Medellín', N'Colombia'),
@@ -49,7 +49,7 @@ INSERT INTO Proveedores (proveedor_id, nombre, nit, email, telefono, ciudad, pai
 (25, N'Lumina Global S.A.', N'900740844-9', N'ventas25@proveedor25.com', N'6083052958', N'Miami', N'Estados Unidos');
 GO
 
-/* ---- Productos: 150 registros ---- */
+
 INSERT INTO Productos (producto_id, sku, nombre, descripcion, precio, costo, stock, categoria_id, proveedor_id, activo, fecha_creacion) VALUES
 (1, N'TH-01-0001', N'iPhone Vértice K32', N'iPhone marca Vértice, modelo K32. Garantía de 12 meses.', 2971700, 1660300, 13, 1, 3, 1, '2023-12-30'),
 (2, N'TH-02-0002', N'Portátil Ultrabook Cóndor R69', N'Portátil Ultrabook marca Cóndor, modelo R69. Garantía de 12 meses.', 6708500, 3779800, 51, 2, 9, 1, '2023-11-12'),
@@ -203,7 +203,7 @@ INSERT INTO Productos (producto_id, sku, nombre, descripcion, precio, costo, sto
 (150, N'TH-06-0150', N'Olla Arrocera Lumina D44', N'Olla Arrocera marca Lumina, modelo D44. Garantía de 12 meses.', 336900, 209900, 118, 6, 9, 1, '2023-01-05');
 GO
 
-/* ---- Clientes: 300 registros ---- */
+
 INSERT INTO Clientes (cliente_id, nombres, apellidos, email, telefono, fecha_nacimiento, fecha_registro, segmento) VALUES
 (1, N'Jorge', N'Torres Pérez', N'jorge.torres1@correo.com', N'3119637352', NULL, '2022-05-08', N'Regular'),
 (2, N'Luis', N'Medina Medina', N'luis.medina2@correo.com', N'3229920723', '1975-12-21', '2025-05-10', N'Regular'),
@@ -507,7 +507,7 @@ INSERT INTO Clientes (cliente_id, nombres, apellidos, email, telefono, fecha_nac
 (300, N'Manuela', N'Valencia González', N'manuela.valencia300@correo.com', N'3143536038', '1980-04-15', '2023-06-10', N'Regular');
 GO
 
-/* ---- Direcciones: 452 registros ---- */
+
 INSERT INTO Direcciones (direccion_id, cliente_id, tipo, direccion, ciudad, departamento, codigo_postal, es_principal) VALUES
 (1, 1, N'Casa', N'Carrera 152 # 94-92', N'Santa Marta', N'Magdalena', N'470578', 1),
 (2, 2, N'Casa', N'Calle 59 # 85-38', N'Bogotá', N'Cundinamarca', N'110249', 1),
@@ -963,7 +963,7 @@ INSERT INTO Direcciones (direccion_id, cliente_id, tipo, direccion, ciudad, depa
 (452, 300, N'Casa', N'Calle 42 # 117-87', N'Barranquilla', N'Atlántico', N'080724', 1);
 GO
 
-/* ---- Pedidos: 700 registros ---- */
+
 INSERT INTO Pedidos (pedido_id, cliente_id, direccion_id, fecha_pedido, estado, subtotal, descuento, total) VALUES
 (1, 31, 48, '2025-03-31T04:16:33', N'Cancelado', 27717100, 593705, 27123395),
 (2, 237, 353, '2024-07-31T19:34:05', N'Entregado', 1931000, 76360, 1854640),
@@ -1669,7 +1669,7 @@ INSERT INTO Pedidos (pedido_id, cliente_id, direccion_id, fecha_pedido, estado, 
 (700, 224, 333, '2025-05-06T20:19:03', N'Entregado', 3867200, 0, 3867200);
 GO
 
-/* ---- DetallePedido: 1685 registros ---- */
+
 INSERT INTO DetallePedido (detalle_id, pedido_id, producto_id, cantidad, precio_unitario, descuento, subtotal) VALUES
 (1, 1, 47, 2, 3660800, 0, 7321600),
 (2, 1, 72, 2, 1453000, 290600, 2615400),
@@ -3364,7 +3364,7 @@ INSERT INTO DetallePedido (detalle_id, pedido_id, producto_id, cantidad, precio_
 (1685, 700, 149, 1, 3867200, 0, 3867200);
 GO
 
-/* ---- Pagos: 700 registros ---- */
+
 INSERT INTO Pagos (pago_id, pedido_id, metodo, estado, monto, fecha_pago, referencia) VALUES
 (1, 1, N'Tarjeta credito', N'Reembolsado', 27123395, '2025-03-31T04:54:33', N'PAY0000001316'),
 (2, 2, N'Tarjeta debito', N'Aprobado', 1854640, '2024-07-31T21:23:05', N'PAY0000002921'),
@@ -4070,7 +4070,7 @@ INSERT INTO Pagos (pago_id, pedido_id, metodo, estado, monto, fecha_pago, refere
 (700, 700, N'PSE', N'Aprobado', 3867200, '2025-05-06T21:44:03', N'PAY0000700994');
 GO
 
-/* ---- Envios: 638 registros ---- */
+
 INSERT INTO Envios (envio_id, pedido_id, transportadora, numero_guia, fecha_envio, fecha_estimada, fecha_entrega, estado, costo_envio) VALUES
 (1, 2, N'Interrapidísimo', N'INT7957403995', '2024-08-01T17:34:05', '2024-08-06', '2024-08-05T15:00:00', N'Entregado', 14175),
 (2, 3, N'TCC', N'TCC3523205491', '2025-12-01T22:50:25', '2025-12-04', '2025-12-03T15:00:00', N'Entregado', 14000),
@@ -4714,7 +4714,7 @@ INSERT INTO Envios (envio_id, pedido_id, transportadora, numero_guia, fecha_envi
 (638, 700, N'Servientrega', N'SER8093131235', '2025-05-08T01:19:03', '2025-05-12', '2025-05-12T16:00:00', N'Entregado', 16200);
 GO
 
-/* ---- Resenas: 508 registros ---- */
+
 INSERT INTO Resenas (resena_id, producto_id, cliente_id, calificacion, comentario, fecha) VALUES
 (1, 147, 237, 5, N'Excelente producto, lo recomiendo.', '2024-09-01T20:00:00'),
 (2, 146, 271, 1, N'Muy mala experiencia, no lo recomiendo.', '2025-12-31T23:59:59'),
@@ -5228,4 +5228,4 @@ INSERT INTO Resenas (resena_id, producto_id, cliente_id, calificacion, comentari
 (508, 131, 179, 3, N'Es aceptable, nada extraordinario.', '2025-06-24T21:00:00');
 GO
 
-/* TOTAL DE REGISTROS CARGADOS: 5170 */
+

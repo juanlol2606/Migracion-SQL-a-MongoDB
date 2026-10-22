@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TecnoHogar · Migración SQL Server → MongoDB</title>
+  <title>TecnoHogar </title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
       <span class="logo" aria-hidden="true">⇄</span>
       <div>
         <h1>TecnoHogar</h1>
-        <p>Migración SQL Server → MongoDB · Taller 3 Bases de Datos II</p>
+        
       </div>
     </div>
     <div class="conexiones">
@@ -29,7 +29,7 @@
   </nav>
 
   <main>
-    <!-- ============================================================ MIGRACIÓN -->
+    <!-- MIGRACIÓN -->
     <section class="vista activa" id="vista-panel">
       <div class="rejilla dos">
         <article class="tarjeta">
@@ -48,15 +48,15 @@
         <header><h2>Proceso</h2></header>
         <ol class="pasos">
           <li>
-            <div><b>1. Crear y poblar SQL Server</b><span>Ejecuta <code>01_crear_bd.sql</code> y <code>02_cargar_datos.sql</code>. Borra y recrea TecnoHogarDB.</span></div>
+            <div><b>1. Crear y poblar SQL Server</b><span>Ejecuta <code>01_crear_bd.sql</code> y <code>02_cargar_datos.sql</code>.</span></div>
             <button class="btn" id="btn-instalar">Instalar base SQL</button>
           </li>
           <li>
-            <div><b>2. Migrar a MongoDB</b><span>Extract → Transform (10 tablas → 6 colecciones) → Load + índices.</span></div>
+            <div><b>2. Migrar a MongoDB</b><span>Extract → Transform → Load .</span></div>
             <button class="btn primario" id="btn-migrar">Ejecutar migración</button>
           </li>
           <li>
-            <div><b>3. Verificar</b><span>43 pruebas: modelo relacional (10 tablas, 11 FK, más de 5.000 registros), conteos, totales, referencias, embebidos y muestreo. Guarda el reporte en <code>evidencias/</code>.</span></div>
+            <div><b>3. Verificar</b><span>43 pruebas.</span></div>
             <button class="btn" id="btn-verificar">Verificar migración</button>
           </li>
         </ol>
@@ -82,16 +82,16 @@
             <h3>6 colecciones</h3>
             <div><b>categorias</b><em>independiente</em></div>
             <div><b>proveedores</b><em>independiente</em></div>
-            <div><b>productos</b><em>referencing + calificación computada</em></div>
+            <div><b>productos</b><em>referencing</em></div>
             <div><b>resenas</b><em>referencing</em></div>
-            <div><b>clientes</b><em>embedding: direcciones[ ]</em></div>
-            <div><b>pedidos</b><em>embedding: items[ ], pago{ }, envio{ } · referencing: cliente_id</em></div>
+            <div><b>clientes</b><em>embedding: direcciones</em></div>
+            <div><b>pedidos</b><em>embedding: items, pago, envio · referencing: cliente_id</em></div>
           </div>
         </div>
       </article>
     </section>
 
-    <!-- ============================================================ CONSULTAS -->
+    <!--CONSULTAS -->
     <section class="vista" id="vista-consultas">
       <div class="consultas">
         <aside class="lista-consultas" id="lista-consultas"></aside>
@@ -118,7 +118,7 @@
               </div>
             </header>
             <textarea id="c-editor" spellcheck="false" aria-label="Pipeline de agregación"></textarea>
-            <p class="ayuda">Puede editar el pipeline en vivo (sintaxis de mongosh: claves sin comillas, <code>ISODate("2025-01-01")</code>). <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ejecuta.</p>
+            
           </article>
           <article class="tarjeta">
             <header>
@@ -137,7 +137,7 @@
       </div>
     </section>
 
-    <!-- ============================================================ EXPLORAR -->
+    <!--  EXPLORAR -->
     <section class="vista" id="vista-explorar">
       <article class="tarjeta">
         <header><h2>Colecciones</h2></header>

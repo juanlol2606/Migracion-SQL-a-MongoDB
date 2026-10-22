@@ -1,18 +1,12 @@
-/**
- * Las 8 consultas de negocio sobre el modelo documental de TecnoHogar.
- * Se definen una sola vez aquí y se usan desde la interfaz web, la consola
- * y para generar consultas/consultas_mongosh.js.
- *
- * FECHA_CORTE representa el "hoy" del análisis (último día con datos).
- */
+
 import type { Document } from "mongodb";
 
 export const FECHA_CORTE = new Date("2025-12-31T23:59:59Z");
 const INICIO_2025 = new Date("2025-01-01T00:00:00Z");
 const INICIO_2026 = new Date("2026-01-01T00:00:00Z");
-const HACE_90_DIAS = new Date("2025-10-02T00:00:00Z");   // FECHA_CORTE - 90 días
-const HACE_180_DIAS = new Date("2025-07-04T00:00:00Z");  // FECHA_CORTE - 180 días
-const DIA_MS = 86_400_000;                               // milisegundos en un día
+const HACE_90_DIAS = new Date("2025-10-02T00:00:00Z");   
+const HACE_180_DIAS = new Date("2025-07-04T00:00:00Z");  
+const DIA_MS = 86_400_000;                               
 const VENTA_VALIDA = ["Pagado", "Enviado", "Entregado"];
 
 export interface Consulta {
@@ -29,9 +23,9 @@ export const CONSULTAS: Consulta[] = [
   // ------------------------------------------------------------------ 1
   {
     id: 1,
-    titulo: "Ingresos y margen bruto por categoría (2025)",
-    pregunta: "¿Qué categorías generan más ingresos y cuáles dejan mejor margen?",
-    decision: "Dónde invertir en publicidad y qué categorías ampliar o renegociar con proveedores.",
+    titulo: "Ingresos y margen bruto por categoría ",
+    pregunta: "Qué categorías generan más ingresos y cuáles dejan mejor margen?",
+    decision: "",
     coleccion: "pedidos",
     tecnicas: ["$match", "$unwind", "2 × $lookup", "$group", "$addToSet", "$project", "$sort"],
     pipeline: [
@@ -69,7 +63,7 @@ export const CONSULTAS: Consulta[] = [
     id: 2,
     titulo: "Top 10 clientes por valor de compra",
     pregunta: "¿Quiénes son los clientes más valiosos y dónde están?",
-    decision: "A quién ofrecer fidelización, beneficios VIP o atención preferente.",
+    decision: "",
     coleccion: "pedidos",
     tecnicas: ["$match", "$group", "$sort", "$limit", "$lookup", "$unwind", "$project", "$filter"],
     pipeline: [
@@ -114,7 +108,7 @@ export const CONSULTAS: Consulta[] = [
     id: 3,
     titulo: "Productos en riesgo de quedarse sin inventario",
     pregunta: "¿Qué productos se agotarán en menos de 30 días al ritmo de venta actual y a qué proveedor hay que pedirles?",
-    decision: "Qué reabastecer primero y a qué proveedor contactar.",
+    decision: "",
     coleccion: "pedidos",
     tecnicas: ["$match", "$unwind", "$group", "3 × $lookup", "$project", "$sort", "$limit"],
     pipeline: [
@@ -153,7 +147,7 @@ export const CONSULTAS: Consulta[] = [
     id: 4,
     titulo: "Desempeño de las transportadoras",
     pregunta: "¿Qué transportadora entrega más rápido, con menos retrasos y a menor costo?",
-    decision: "Con qué transportadora renegociar, a cuál asignar más volumen o cuál reemplazar.",
+    decision: "",
     coleccion: "pedidos",
     tecnicas: ["$match", "$project", "$cond", "aritmética de fechas", "$group", "$sort"],
     pipeline: [
@@ -193,9 +187,9 @@ export const CONSULTAS: Consulta[] = [
   // ------------------------------------------------------------------ 5
   {
     id: 5,
-    titulo: "Ventas mensuales 2025 y método de pago preferido",
+    titulo: "Ventas mensuales y método de pago preferido",
     pregunta: "¿Cómo evolucionan las ventas mes a mes y con qué medios pagan los clientes?",
-    decision: "Planear inventario y campañas por temporada; negociar comisiones con la pasarela de pagos.",
+    decision: "",
     coleccion: "pedidos",
     tecnicas: ["$match", "$group (2 niveles)", "$push", "$sort", "$project", "$arrayElemAt"],
     pipeline: [
@@ -233,9 +227,9 @@ export const CONSULTAS: Consulta[] = [
   // ------------------------------------------------------------------ 6
   {
     id: 6,
-    titulo: "Productos peor calificados (mínimo 10 reseñas)",
+    titulo: "Productos peor calificados ",
     pregunta: "¿Qué productos generan más insatisfacción, de qué categoría y de qué proveedor vienen?",
-    decision: "Retirar productos, exigir mejoras al proveedor o reforzar control de calidad.",
+    decision: "",
     coleccion: "resenas",
     tecnicas: ["$group", "$cond", "$match", "$sort", "$limit", "3 × $lookup", "$project"],
     pipeline: [
@@ -274,7 +268,7 @@ export const CONSULTAS: Consulta[] = [
     id: 7,
     titulo: "Ventas, cancelaciones y costo logístico por departamento",
     pregunta: "¿En qué regiones vendemos más, dónde se cancela más y cuánto cuesta enviar allá?",
-    decision: "Abrir bodega o punto de recogida regional, cobrar envío diferenciado, enfocar campañas.",
+    decision: "",
     coleccion: "pedidos",
     tecnicas: ["$group", "$cond", "$addToSet", "$avg", "$project", "$size", "$sort"],
     pipeline: [
@@ -310,7 +304,7 @@ export const CONSULTAS: Consulta[] = [
     id: 8,
     titulo: "Clientes valiosos en riesgo de abandono",
     pregunta: "¿Qué clientes compraban seguido pero llevan más de 180 días sin comprar?",
-    decision: "A quién enviar una campaña de reactivación (cupón, llamada, correo personalizado).",
+    decision: "",
     coleccion: "clientes",
     tecnicas: ["$lookup con let/pipeline", "$expr", "$unwind", "$match", "$project", "$sort", "$limit"],
     pipeline: [

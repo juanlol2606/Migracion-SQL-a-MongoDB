@@ -1,9 +1,3 @@
-/* =====================================================================
-   TALLER 3 - Migración SQL Server -> MongoDB
-   Caso de estudio: Tienda en línea "TecnoHogar" (e-commerce, Colombia)
-   Script 01: creación de la base de datos y de las 10 entidades
-   ===================================================================== */
-
 IF DB_ID('TecnoHogarDB') IS NOT NULL
 BEGIN
     ALTER DATABASE TecnoHogarDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
@@ -17,14 +11,14 @@ GO
 USE TecnoHogarDB;
 GO
 
-/* 1. CATEGORIAS: clasificación del catálogo */
+
 CREATE TABLE Categorias (
     categoria_id   INT            NOT NULL PRIMARY KEY,
     nombre         NVARCHAR(80)   NOT NULL UNIQUE,
     descripcion    NVARCHAR(250)  NULL
 );
 
-/* 2. PROVEEDORES: empresas que surten los productos */
+
 CREATE TABLE Proveedores (
     proveedor_id   INT            NOT NULL PRIMARY KEY,
     nombre         NVARCHAR(120)  NOT NULL,
@@ -35,7 +29,7 @@ CREATE TABLE Proveedores (
     pais           NVARCHAR(60)   NOT NULL
 );
 
-/* 3. PRODUCTOS: catálogo de la tienda */
+
 CREATE TABLE Productos (
     producto_id    INT            NOT NULL PRIMARY KEY,
     sku            VARCHAR(20)    NOT NULL UNIQUE,
@@ -50,7 +44,7 @@ CREATE TABLE Productos (
     fecha_creacion DATE           NOT NULL
 );
 
-/* 4. CLIENTES */
+
 CREATE TABLE Clientes (
     cliente_id       INT           NOT NULL PRIMARY KEY,
     nombres          NVARCHAR(80)  NOT NULL,
@@ -62,7 +56,7 @@ CREATE TABLE Clientes (
     segmento         VARCHAR(20)   NOT NULL CHECK (segmento IN ('Regular','Frecuente','Premium'))
 );
 
-/* 5. DIRECCIONES: un cliente puede tener varias (casa, oficina, ...) */
+
 CREATE TABLE Direcciones (
     direccion_id   INT            NOT NULL PRIMARY KEY,
     cliente_id     INT            NOT NULL REFERENCES Clientes(cliente_id),
@@ -74,7 +68,7 @@ CREATE TABLE Direcciones (
     es_principal   BIT            NOT NULL DEFAULT 0
 );
 
-/* 6. PEDIDOS: encabezado de la orden de compra */
+
 CREATE TABLE Pedidos (
     pedido_id      INT            NOT NULL PRIMARY KEY,
     cliente_id     INT            NOT NULL REFERENCES Clientes(cliente_id),
@@ -86,7 +80,7 @@ CREATE TABLE Pedidos (
     total          DECIMAL(14,2)  NOT NULL
 );
 
-/* 7. DETALLE_PEDIDO: líneas (productos) de cada pedido */
+
 CREATE TABLE DetallePedido (
     detalle_id      INT           NOT NULL PRIMARY KEY,
     pedido_id       INT           NOT NULL REFERENCES Pedidos(pedido_id),
@@ -98,7 +92,7 @@ CREATE TABLE DetallePedido (
     CONSTRAINT UQ_Detalle_Pedido_Producto UNIQUE (pedido_id, producto_id)
 );
 
-/* 8. PAGOS: relación 1:1 con el pedido */
+
 CREATE TABLE Pagos (
     pago_id        INT            NOT NULL PRIMARY KEY,
     pedido_id      INT            NOT NULL UNIQUE REFERENCES Pedidos(pedido_id),
@@ -109,7 +103,7 @@ CREATE TABLE Pagos (
     referencia     VARCHAR(30)    NOT NULL UNIQUE
 );
 
-/* 9. ENVIOS: relación 1:1 (opcional) con el pedido */
+
 CREATE TABLE Envios (
     envio_id        INT           NOT NULL PRIMARY KEY,
     pedido_id       INT           NOT NULL UNIQUE REFERENCES Pedidos(pedido_id),
@@ -122,7 +116,7 @@ CREATE TABLE Envios (
     costo_envio     DECIMAL(10,2) NOT NULL
 );
 
-/* 10. RESENAS: opiniones de clientes sobre productos comprados */
+
 CREATE TABLE Resenas (
     resena_id      INT            NOT NULL PRIMARY KEY,
     producto_id    INT            NOT NULL REFERENCES Productos(producto_id),
@@ -134,13 +128,4 @@ CREATE TABLE Resenas (
 );
 GO
 
-/* Índices de apoyo para las consultas de extracción */
-CREATE INDEX IX_Productos_Categoria   ON Productos(categoria_id);
-CREATE INDEX IX_Productos_Proveedor   ON Productos(proveedor_id);
-CREATE INDEX IX_Direcciones_Cliente   ON Direcciones(cliente_id);
-CREATE INDEX IX_Pedidos_Cliente       ON Pedidos(cliente_id);
-CREATE INDEX IX_Pedidos_Fecha         ON Pedidos(fecha_pedido);
-CREATE INDEX IX_Detalle_Pedido        ON DetallePedido(pedido_id);
-CREATE INDEX IX_Detalle_Producto      ON DetallePedido(producto_id);
-CREATE INDEX IX_Resenas_Producto      ON Resenas(producto_id);
-GO
+

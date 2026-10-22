@@ -1,6 +1,6 @@
-/* Interfaz web de TecnoHogar. Se compila a public/app.js con: npm run build:client */
+/* Interfaz web de TecnoHogar.  */
 
-// ============================================================ tipos de la API
+
 interface Estado {
   destino: { sql: string; mongo: string };
   sql: { ok: boolean; version?: string; error?: string; tablas?: Record<string, number> };
@@ -17,7 +17,7 @@ type Evento = { tipo: "log"; mensaje: string } | { tipo: "fin"; datos: unknown }
 
 const COLECCIONES = ["clientes", "pedidos", "productos", "resenas", "categorias", "proveedores"];
 
-// ============================================================ utilidades
+//  utilidades
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector(sel) as T;
 const $$ = <T extends HTMLElement = HTMLElement>(sel: string) => Array.from(document.querySelectorAll(sel)) as T[];
 const fmtNum = (n: number) => n.toLocaleString("es-CO", { maximumFractionDigits: 2 });
@@ -43,7 +43,7 @@ async function api<T>(url: string, opciones?: RequestInit): Promise<T> {
   return datos as T;
 }
 
-/** Fecha EJSON ({ $date: "..." }) -> texto legible. */
+
 function esFecha(v: unknown): v is { $date: string } {
   return !!v && typeof v === "object" && "$date" in (v as object);
 }
@@ -52,7 +52,7 @@ function fmtFecha(v: { $date: string }) {
   return iso.endsWith("T00:00:00Z") || iso.endsWith("T00:00:00.000Z") ? iso.slice(0, 10) : iso.slice(0, 16).replace("T", " ");
 }
 
-/** JSON con colores para documentos. */
+
 function jsonColor(v: unknown, sangria = ""): string {
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
   if (esFecha(v)) return `<span class="d">ISODate("${esc(fmtFecha(v))}")</span>`;
@@ -73,7 +73,7 @@ function compacto(v: unknown): string {
   return JSON.stringify(v, (_k, x) => (esFecha(x) ? fmtFecha(x) : x));
 }
 
-// ============================================================ pestañas
+//  pestañas
 $$<HTMLButtonElement>(".pestanas button").forEach((b) =>
   b.addEventListener("click", () => {
     $$(".pestanas button").forEach((x) => x.classList.toggle("activa", x === b));
@@ -81,7 +81,7 @@ $$<HTMLButtonElement>(".pestanas button").forEach((b) =>
     if (b.dataset.vista === "explorar") cargarColeccion(coleccionActual, 0);
   }));
 
-// ============================================================ estado de conexiones
+//  estado de conexiones
 function conteos(cont: HTMLElement, datos: Record<string, number>) {
   cont.replaceChildren();
   let total = 0;
@@ -115,7 +115,7 @@ async function refrescarEstado() {
 }
 $("#btn-refrescar").addEventListener("click", refrescarEstado);
 
-// ============================================================ procesos con avance en vivo
+
 const consola = $("#consola");
 function escribir(linea: string, clase = "") {
   const span = el("span", clase ? { class: clase } : {}, linea + "\n");
@@ -182,7 +182,7 @@ function pintarVerificacion(pruebas: Prueba[]) {
   for (const p of pruebas) {
     if (p.seccion !== seccion) {
       seccion = p.seccion;
-      // En la sección 0 ambos valores salen de SQL Server: se compara lo esperado con lo encontrado
+      
       cuerpo.append(seccion.startsWith("0.")
         ? el("tr", { class: "seccion" }, el("td", {}, seccion), el("td", {}, "Esperado"), el("td", {}, "Encontrado en SQL Server"), el("td", {}))
         : el("tr", { class: "seccion" }, el("td", { colspan: "4" }, seccion)));
@@ -194,7 +194,7 @@ function pintarVerificacion(pruebas: Prueba[]) {
   tabla.append(cuerpo);
 }
 
-// ============================================================ consultas
+//  consultas
 let consultas: ConsultaApi[] = [];
 let actual: ConsultaApi | null = null;
 let ultimoResultado: ResultadoApi | null = null;
@@ -220,7 +220,7 @@ function seleccionar(c: ConsultaApi) {
   $$(".item-consulta").forEach((b) => b.classList.toggle("activa", b.dataset.id === String(c.id)));
   $("#c-titulo").textContent = `Consulta ${c.id}. ${c.titulo}`;
   $("#c-pregunta").textContent = c.pregunta;
-  $("#c-decision").textContent = `Decisión que apoya: ${c.decision}`;
+  $("#c-decision").textContent = ``;
   $("#c-tecnicas").replaceChildren(...c.tecnicas.map((t) => el("span", { class: "chip" }, t)));
   selColeccion.value = c.coleccion;
   editor.value = c.texto;
@@ -305,7 +305,7 @@ $("#btn-evidencias").addEventListener("click", async (e) => {
   }
 });
 
-// ============================================================ explorador
+//  explorador
 let coleccionActual = "pedidos";
 let salto = 0;
 let totalColeccion = 0;

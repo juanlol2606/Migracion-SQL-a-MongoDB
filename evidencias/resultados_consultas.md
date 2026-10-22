@@ -1,10 +1,10 @@
 # Resultados de las consultas
 
-Ejecutado: 22/10/2026, 1:56:55 p. m.
+Ejecutado: 22/10/2026, 5:28:58 p. m.
 
-## Consulta 1. Ingresos y margen bruto por categoría (2025)
+## Consulta 1. Ingresos y margen bruto por categoría 
 
-**Pregunta:** ¿Qué categorías generan más ingresos y cuáles dejan mejor margen?  
+**Pregunta:** Qué categorías generan más ingresos y cuáles dejan mejor margen?  
 **Colección:** `pedidos` · **Operadores:** $match, $unwind, 2 × $lookup, $group, $addToSet, $project, $sort
 
 | unidades | categoria | ingresos | num_pedidos | margen_bruto | margen_pct |
@@ -53,15 +53,15 @@ Ejecutado: 22/10/2026, 1:56:55 p. m.
 | 6 | 0 | TH-04-0052 | 0 | 0.07 | Lumina Global S.A.S. | ventas14@proveedor14.com | Colombia | Audio | Parlante Portátil Cóndor C60 |
 | 5 | 0 | TH-05-0053 | 0 | 0.06 | Zentek Andina Distribuciones | ventas3@proveedor3.com | Colombia | Electrodomésticos | Estufa 4 Puestos Andes B13 |
 | 5 | 0 | TH-11-0119 | 0 | 0.06 | Altura Global S.A.S. | ventas20@proveedor20.com | Panamá | Deportes | Banda de Actividad Pixel L97 |
-| 4 | 0 | TH-08-0128 | 0 | 0.04 | Lumina Tech S.A.S. | ventas5@proveedor5.com | Colombia | Accesorios | Funda Protectora Lumina D92 |
-| 4 | 0 | TH-08-0140 | 0 | 0.04 | Lumina Tech S.A.S. | ventas5@proveedor5.com | Colombia | Accesorios | Cargador Rápido Nova T69 |
 | 4 | 0 | TH-12-0084 | 0 | 0.04 | Vértice Tech S.A.S. | ventas6@proveedor6.com | Colombia | Oficina | Impresora Multifuncional Pixel M56 |
-| 3 | 0 | TH-02-0074 | 0 | 0.03 | Orbis Global S.A. | ventas16@proveedor16.com | Colombia | Computadores | PC Escritorio Orbis X46 |
+| 4 | 0 | TH-08-0140 | 0 | 0.04 | Lumina Tech S.A.S. | ventas5@proveedor5.com | Colombia | Accesorios | Cargador Rápido Nova T69 |
+| 4 | 0 | TH-08-0128 | 0 | 0.04 | Lumina Tech S.A.S. | ventas5@proveedor5.com | Colombia | Accesorios | Funda Protectora Lumina D92 |
 | 3 | 0 | TH-02-0134 | 0 | 0.03 | Cóndor Andina Importaciones | ventas9@proveedor9.com | Colombia | Computadores | Chromebook Lumina C98 |
-| 2 | 0 | TH-09-0105 | 0 | 0.02 | Altura Global Distribuciones | ventas7@proveedor7.com | Colombia | Hogar inteligente | Enchufe Wi-Fi Altura E40 |
-| 2 | 0 | TH-07-0139 | 0 | 0.02 | Kumo Tech Distribuciones | ventas18@proveedor18.com | Colombia | Videojuegos | Control Inalámbrico Orbis D53 |
-| 2 | 0 | TH-11-0143 | 0 | 0.02 | Zentek Tech S.A. | ventas21@proveedor21.com | Estados Unidos | Deportes | Bicicleta Eléctrica Orbis T46 |
+| 3 | 0 | TH-02-0074 | 0 | 0.03 | Orbis Global S.A. | ventas16@proveedor16.com | Colombia | Computadores | PC Escritorio Orbis X46 |
 | 2 | 0 | TH-12-0108 | 0 | 0.02 | Vértice Tech S.A.S. | ventas6@proveedor6.com | Colombia | Oficina | Destructora de Papel Orbis D84 |
+| 2 | 0 | TH-07-0139 | 0 | 0.02 | Kumo Tech Distribuciones | ventas18@proveedor18.com | Colombia | Videojuegos | Control Inalámbrico Orbis D53 |
+| 2 | 0 | TH-09-0105 | 0 | 0.02 | Altura Global Distribuciones | ventas7@proveedor7.com | Colombia | Hogar inteligente | Enchufe Wi-Fi Altura E40 |
+| 2 | 0 | TH-11-0143 | 0 | 0.02 | Zentek Tech S.A. | ventas21@proveedor21.com | Estados Unidos | Deportes | Bicicleta Eléctrica Orbis T46 |
 
 ## Consulta 4. Desempeño de las transportadoras
 

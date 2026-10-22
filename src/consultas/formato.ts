@@ -1,10 +1,10 @@
-/** Conversión de pipelines entre objetos TypeScript y texto estilo mongosh. */
+
 import JSON5 from "json5";
 import { BSON, type Document } from "mongodb";
 
 const IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
-/** Objeto -> texto en sintaxis de mongosh (claves sin comillas, ISODate), compacto pero legible. */
+
 export function aMongosh(obj: unknown, nivel = 0, ancho = 100): string {
   const sangria = "  ".repeat(nivel);
   const clave = (k: string) => (IDENT.test(k) ? k : JSON.stringify(k));
@@ -31,10 +31,7 @@ export function aMongosh(obj: unknown, nivel = 0, ancho = 100): string {
 
 const ETAPAS_PROHIBIDAS = ["$out", "$merge"];
 
-/**
- * Texto escrito por el usuario (sintaxis mongosh o JSON) -> pipeline.
- * Acepta claves sin comillas, comillas simples, comas finales, ISODate("...") y new Date("...").
- */
+
 export function parsearPipeline(texto: string): Document[] {
   const normal = texto
     .trim()
@@ -57,5 +54,5 @@ export function parsearPipeline(texto: string): Document[] {
   return pipeline;
 }
 
-/** Documentos de MongoDB -> JSON seguro para enviar al navegador (fechas como {$date}). */
+
 export const aJsonSeguro = (docs: unknown): unknown => BSON.EJSON.serialize(docs as Document, { relaxed: true });
