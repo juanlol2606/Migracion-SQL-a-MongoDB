@@ -1,0 +1,32 @@
+{
+  "name": "taller3-tecnohogar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Taller 3 Bases de Datos II: migración SQL Server -> MongoDB con interfaz web (TypeScript)",
+  "scripts": {
+    "dev": "npm run build:client && tsx watch src/server/app.ts",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json",
+    "build:client": "tsc -p tsconfig.client.json",
+    "start": "npm run build && node dist/server/app.js",
+    "generar-datos": "tsx src/cli/generarDatos.ts",
+    "instalar-sql": "tsx src/cli/instalarSql.ts",
+    "migrar": "tsx src/cli/migrar.ts",
+    "verificar": "tsx src/cli/verificar.ts",
+    "consultas": "tsx src/cli/consultas.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "16.4.5",
+    "express": "4.21.2",
+    "json5": "2.2.3",
+    "mongodb": "6.10.0",
+    "mssql": "11.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "4.17.21",
+    "@types/mssql": "9.1.5",
+    "@types/node": "22.9.0",
+    "tsx": "4.19.2",
+    "typescript": "5.6.3"
+  }
+}

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TecnoHogar · Migración SQL Server → MongoDB</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="barra">
+    <div class="marca">
+      <span class="logo" aria-hidden="true">⇄</span>
+      <div>
+        <h1>TecnoHogar</h1>
+        <p>Migración SQL Server → MongoDB · Taller 3 Bases de Datos II</p>
+      </div>
+    </div>
+    <div class="conexiones">
+      <span class="pildora" id="pill-sql"><i></i>SQL Server</span>
+      <span class="pildora" id="pill-mongo"><i></i>MongoDB</span>
+      <button class="btn fantasma" id="btn-refrescar" title="Actualizar estado">↻</button>
+    </div>
+  </header>
+
+  <nav class="pestanas" role="tablist">
+    <button role="tab" class="activa" data-vista="panel">Migración</button>
+    <button role="tab" data-vista="consultas">Consultas</button>
+    <button role="tab" data-vista="explorar">Explorar colecciones</button>
+  </nav>
+
+  <main>
+    <!-- ============================================================ MIGRACIÓN -->
+    <section class="vista activa" id="vista-panel">
+      <div class="rejilla dos">
+        <article class="tarjeta">
+          <header><h2>SQL Server</h2><small id="destino-sql"></small></header>
+          <p class="sutil" id="version-sql">—</p>
+          <div id="tablas-sql" class="conteos"></div>
+        </article>
+        <article class="tarjeta">
+          <header><h2>MongoDB</h2><small id="destino-mongo"></small></header>
+          <p class="sutil" id="estado-mongo">—</p>
+          <div id="colecciones-mongo" class="conteos"></div>
+        </article>
+      </div>
+
+      <article class="tarjeta">
+        <header><h2>Proceso</h2></header>
+        <ol class="pasos">
+          <li>
+            <div><b>1. Crear y poblar SQL Server</b><span>Ejecuta <code>01_crear_bd.sql</code> y <code>02_cargar_datos.sql</code>. Borra y recrea TecnoHogarDB.</span></div>
+            <button class="btn" id="btn-instalar">Instalar base SQL</button>
+          </li>
+          <li>
+            <div><b>2. Migrar a MongoDB</b><span>Extract → Transform (10 tablas → 6 colecciones) → Load + índices.</span></div>
+            <button class="btn primario" id="btn-migrar">Ejecutar migración</button>
+          </li>
+          <li>
+            <div><b>3. Verificar</b><span>43 pruebas: modelo relacional (10 tablas, 11 FK, más de 5.000 registros), conteos, totales, referencias, embebidos y muestreo. Guarda el reporte en <code>evidencias/</code>.</span></div>
+            <button class="btn" id="btn-verificar">Verificar migración</button>
+          </li>
+        </ol>
+        <pre class="consola" id="consola" aria-live="polite">Listo.</pre>
+      </article>
+
+      <article class="tarjeta oculto" id="tarjeta-verificacion">
+        <header><h2>Resultado de la verificación</h2><span class="insignia" id="resumen-verificacion"></span></header>
+        <div class="tabla-scroll"><table id="tabla-verificacion"></table></div>
+      </article>
+
+      <article class="tarjeta">
+        <header><h2>Transformación del modelo</h2></header>
+        <div class="mapa">
+          <div class="col-mapa">
+            <h3>10 tablas</h3>
+            <span>Categorias</span><span>Proveedores</span><span>Productos</span><span>Resenas</span>
+            <span>Clientes</span><span>Direcciones</span>
+            <span>Pedidos</span><span>DetallePedido</span><span>Pagos</span><span>Envios</span>
+          </div>
+          <div class="col-mapa flechas" aria-hidden="true"><span>→</span></div>
+          <div class="col-mapa colecciones">
+            <h3>6 colecciones</h3>
+            <div><b>categorias</b><em>independiente</em></div>
+            <div><b>proveedores</b><em>independiente</em></div>
+            <div><b>productos</b><em>referencing + calificación computada</em></div>
+            <div><b>resenas</b><em>referencing</em></div>
+            <div><b>clientes</b><em>embedding: direcciones[ ]</em></div>
+            <div><b>pedidos</b><em>embedding: items[ ], pago{ }, envio{ } · referencing: cliente_id</em></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============================================================ CONSULTAS -->
+    <section class="vista" id="vista-consultas">
+      <div class="consultas">
+        <aside class="lista-consultas" id="lista-consultas"></aside>
+        <div class="detalle-consulta">
+          <article class="tarjeta">
+            <header>
+              <h2 id="c-titulo">Consulta</h2>
+              <button class="btn fantasma" id="btn-evidencias" title="Ejecuta las 8 y guarda evidencias/resultados_consultas.md">Guardar evidencias de las 8</button>
+            </header>
+            <p id="c-pregunta" class="pregunta"></p>
+            <p id="c-decision" class="sutil"></p>
+            <div id="c-tecnicas" class="chips"></div>
+          </article>
+          <article class="tarjeta">
+            <header>
+              <div class="fila">
+                <label for="c-coleccion">db.</label>
+                <select id="c-coleccion"></select>
+                <span class="sutil">.aggregate(</span>
+              </div>
+              <div class="fila">
+                <button class="btn fantasma" id="btn-restaurar">Restaurar original</button>
+                <button class="btn primario" id="btn-ejecutar">Ejecutar ▶</button>
+              </div>
+            </header>
+            <textarea id="c-editor" spellcheck="false" aria-label="Pipeline de agregación"></textarea>
+            <p class="ayuda">Puede editar el pipeline en vivo (sintaxis de mongosh: claves sin comillas, <code>ISODate("2025-01-01")</code>). <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ejecuta.</p>
+          </article>
+          <article class="tarjeta">
+            <header>
+              <h2>Resultado</h2>
+              <div class="fila">
+                <span class="sutil" id="c-meta"></span>
+                <div class="segmentado">
+                  <button class="activa" data-modo="tabla">Tabla</button>
+                  <button data-modo="json">JSON</button>
+                </div>
+              </div>
+            </header>
+            <div id="c-resultado" class="tabla-scroll"><p class="sutil">Ejecute la consulta para ver los resultados.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ EXPLORAR -->
+    <section class="vista" id="vista-explorar">
+      <article class="tarjeta">
+        <header><h2>Colecciones</h2></header>
+        <div class="chips grandes" id="ex-colecciones"></div>
+      </article>
+      <div class="rejilla explorar">
+        <article class="tarjeta">
+          <header>
+            <h2 id="ex-titulo">Documentos</h2>
+            <div class="fila">
+              <button class="btn fantasma" id="ex-anterior">← Anterior</button>
+              <span class="sutil" id="ex-pagina"></span>
+              <button class="btn fantasma" id="ex-siguiente">Siguiente →</button>
+            </div>
+          </header>
+          <div id="ex-documentos"></div>
+        </article>
+        <article class="tarjeta">
+          <header><h2>Índices</h2></header>
+          <div id="ex-indices"></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
