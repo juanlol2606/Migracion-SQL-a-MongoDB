@@ -1,6 +1,6 @@
 # Resultados de las consultas
 
-Ejecutado: 22/10/2026, 5:28:58 p. m.
+Ejecutado: 22/10/2026, 5:51:41 p. m.
 
 ## Consulta 1. Ingresos y margen bruto por categoría 
 
@@ -53,15 +53,15 @@ Ejecutado: 22/10/2026, 5:28:58 p. m.
 | 6 | 0 | TH-04-0052 | 0 | 0.07 | Lumina Global S.A.S. | ventas14@proveedor14.com | Colombia | Audio | Parlante Portátil Cóndor C60 |
 | 5 | 0 | TH-05-0053 | 0 | 0.06 | Zentek Andina Distribuciones | ventas3@proveedor3.com | Colombia | Electrodomésticos | Estufa 4 Puestos Andes B13 |
 | 5 | 0 | TH-11-0119 | 0 | 0.06 | Altura Global S.A.S. | ventas20@proveedor20.com | Panamá | Deportes | Banda de Actividad Pixel L97 |
-| 4 | 0 | TH-12-0084 | 0 | 0.04 | Vértice Tech S.A.S. | ventas6@proveedor6.com | Colombia | Oficina | Impresora Multifuncional Pixel M56 |
-| 4 | 0 | TH-08-0140 | 0 | 0.04 | Lumina Tech S.A.S. | ventas5@proveedor5.com | Colombia | Accesorios | Cargador Rápido Nova T69 |
 | 4 | 0 | TH-08-0128 | 0 | 0.04 | Lumina Tech S.A.S. | ventas5@proveedor5.com | Colombia | Accesorios | Funda Protectora Lumina D92 |
-| 3 | 0 | TH-02-0134 | 0 | 0.03 | Cóndor Andina Importaciones | ventas9@proveedor9.com | Colombia | Computadores | Chromebook Lumina C98 |
+| 4 | 0 | TH-08-0140 | 0 | 0.04 | Lumina Tech S.A.S. | ventas5@proveedor5.com | Colombia | Accesorios | Cargador Rápido Nova T69 |
+| 4 | 0 | TH-12-0084 | 0 | 0.04 | Vértice Tech S.A.S. | ventas6@proveedor6.com | Colombia | Oficina | Impresora Multifuncional Pixel M56 |
 | 3 | 0 | TH-02-0074 | 0 | 0.03 | Orbis Global S.A. | ventas16@proveedor16.com | Colombia | Computadores | PC Escritorio Orbis X46 |
-| 2 | 0 | TH-12-0108 | 0 | 0.02 | Vértice Tech S.A.S. | ventas6@proveedor6.com | Colombia | Oficina | Destructora de Papel Orbis D84 |
-| 2 | 0 | TH-07-0139 | 0 | 0.02 | Kumo Tech Distribuciones | ventas18@proveedor18.com | Colombia | Videojuegos | Control Inalámbrico Orbis D53 |
+| 3 | 0 | TH-02-0134 | 0 | 0.03 | Cóndor Andina Importaciones | ventas9@proveedor9.com | Colombia | Computadores | Chromebook Lumina C98 |
 | 2 | 0 | TH-09-0105 | 0 | 0.02 | Altura Global Distribuciones | ventas7@proveedor7.com | Colombia | Hogar inteligente | Enchufe Wi-Fi Altura E40 |
+| 2 | 0 | TH-07-0139 | 0 | 0.02 | Kumo Tech Distribuciones | ventas18@proveedor18.com | Colombia | Videojuegos | Control Inalámbrico Orbis D53 |
 | 2 | 0 | TH-11-0143 | 0 | 0.02 | Zentek Tech S.A. | ventas21@proveedor21.com | Estados Unidos | Deportes | Bicicleta Eléctrica Orbis T46 |
+| 2 | 0 | TH-12-0108 | 0 | 0.02 | Vértice Tech S.A.S. | ventas6@proveedor6.com | Colombia | Oficina | Destructora de Papel Orbis D84 |
 
 ## Consulta 4. Desempeño de las transportadoras
 
@@ -76,7 +76,7 @@ Ejecutado: 22/10/2026, 5:28:58 p. m.
 | 125 | 20 | Interrapidísimo | 4.6 | 16 | 12.058 |
 | 142 | 25 | Envía | 4.5 | 17.6 | 11.153 |
 
-## Consulta 5. Ventas mensuales 2025 y método de pago preferido
+## Consulta 5. Ventas mensuales y método de pago preferido
 
 **Pregunta:** ¿Cómo evolucionan las ventas mes a mes y con qué medios pagan los clientes?  
 **Colección:** `pedidos` · **Operadores:** $match, $group (2 niveles), $push, $sort, $project, $arrayElemAt
@@ -96,7 +96,7 @@ Ejecutado: 22/10/2026, 5:28:58 p. m.
 | 48 | Tarjeta credito, 124.904.805, 17; PSE, 61.597.080, 11; Contraentrega, 49.496.135, 9; Tarjeta debito, 39.457.105, 5; Nequi, 23.427.855, 6 | 11 | 298.882.980 | 6.226.729 | Tarjeta credito |
 | 41 | PSE, 93.941.085, 13; Tarjeta debito, 46.434.790, 11; Tarjeta credito, 35.958.860, 8; Nequi, 20.878.080, 4; Contraentrega, 17.542.320, 5 | 12 | 214.755.135 | 5.237.930 | PSE |
 
-## Consulta 6. Productos peor calificados (mínimo 10 reseñas)
+## Consulta 6. Productos peor calificados 
 
 **Pregunta:** ¿Qué productos generan más insatisfacción, de qué categoría y de qué proveedor vienen?  
 **Colección:** `resenas` · **Operadores:** $group, $cond, $match, $sort, $limit, 3 × $lookup, $project

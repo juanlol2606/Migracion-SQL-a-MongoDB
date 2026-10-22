@@ -3,3 +3,4 @@ dist/
 .env
 public/app.js
 instalacion/instalacion.log
+instalacion/diagnostico.txt
