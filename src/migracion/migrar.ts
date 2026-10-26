@@ -6,10 +6,10 @@
  *     Tablas SQL Server                         Colección     Técnica
  *     ----------------------------------------  ------------  ------------------------------------------
  *     Categorias                                categorias    colección independiente
- *     Proveedores                               proveedores   colección independiente (+ subdocumentos)
+ *     Proveedores                               proveedores   colección independiente 
  *     Productos (+ resumen de Resenas)          productos     referencing (categoria_id, proveedor_id)
- *                                                             + patrón computado (calificacion)
- *     Clientes + Direcciones                    clientes      embedding (array direcciones)
+ *                                                             
+ *     Clientes + Direcciones                    clientes      embedding 
  *     Pedidos + DetallePedido + Pagos + Envios  pedidos       embedding (items[], pago{}, envio{})
  *                                                             + referencing (cliente_id, items.producto_id)
  *     Resenas                                   resenas       referencing (producto_id, cliente_id)
@@ -26,7 +26,7 @@ import {
 const LOTE = 1000;
 
 // ------------------------------------------------------------------ utilidades de tipos
-/** DECIMAL -> double redondeado a 2 decimales. */
+
 export const num = (v: unknown): number => Math.round(Number(v) * 100) / 100;
 
 /** DATE / DATETIME2 -> Date (BSON Date). MongoDB no tiene tipo "solo fecha". */
@@ -36,10 +36,10 @@ export function fecha(v: unknown): Date {
   return new Date(s.length === 10 ? `${s}T00:00:00Z` : `${s.replace(" ", "T")}Z`);
 }
 
-/** Igual que fecha(), pero para columnas que admiten NULL. */
+
 export const fechaOpc = (v: unknown): Date | undefined => (v === null || v === undefined ? undefined : fecha(v));
 
-/** Elimina las claves con null/undefined: en MongoDB es mejor omitir el campo que guardar null. */
+
 export function sinNulos<T extends object>(o: T): T {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined)) as T;
 }
@@ -54,7 +54,7 @@ function agruparPor<T, K>(filas: T[], clave: (f: T) => K): Map<K, T[]> {
   return m;
 }
 
-// ------------------------------------------------------------------ 1. EXTRACT
+//  1. EXTRACT
 export async function extraer(fuente: FuenteSql, log: Log): Promise<DatosRelacionales> {
   const datos = {} as DatosRelacionales;
   for (const tabla of TABLAS) {
@@ -64,7 +64,7 @@ export async function extraer(fuente: FuenteSql, log: Log): Promise<DatosRelacio
   return datos;
 }
 
-// ------------------------------------------------------------------ 2. TRANSFORM
+//  2. TRANSFORM
 export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
   //categorias y proveedores
   const categorias = d.Categorias.map((c) => sinNulos({ _id: c.categoria_id, nombre: c.nombre, descripcion: c.descripcion ?? undefined }));
@@ -175,7 +175,7 @@ export function transformar(d: DatosRelacionales, log: Log): ColeccionesMongo {
   return col;
 }
 
-// ------------------------------------------------------------------ 3. LOAD
+//  3. LOAD
 export const VALIDADOR_PEDIDOS: Document = {
   $jsonSchema: {
     bsonType: "object",
