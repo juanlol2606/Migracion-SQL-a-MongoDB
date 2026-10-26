@@ -8,7 +8,7 @@ interface Estado {
   trabajoEnCurso: string | null;
 }
 interface ConsultaApi {
-  id: number; titulo: string; pregunta: string; decision: string;
+  id: number; titulo: string; pregunta: string;
   coleccion: string; tecnicas: string[]; texto: string;
 }
 interface Prueba { seccion: string; prueba: string; sql: string | number; mongo: string | number; ok: boolean }
@@ -220,7 +220,6 @@ function seleccionar(c: ConsultaApi) {
   $$(".item-consulta").forEach((b) => b.classList.toggle("activa", b.dataset.id === String(c.id)));
   $("#c-titulo").textContent = `Consulta ${c.id}. ${c.titulo}`;
   $("#c-pregunta").textContent = c.pregunta;
-  $("#c-decision").textContent = ``;
   $("#c-tecnicas").replaceChildren(...c.tecnicas.map((t) => el("span", { class: "chip" }, t)));
   selColeccion.value = c.coleccion;
   editor.value = c.texto;

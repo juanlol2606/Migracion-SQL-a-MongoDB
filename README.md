@@ -186,16 +186,66 @@ La decisión general fue **embeber lo que un pedido necesita mostrar de una sola
 
 | # | Pregunta de negocio | Colección | Operadores clave |
 |---|---|---|---|
-| 1 | ¿Qué categorías generan más ingresos y cuáles dejan mejor margen? | `pedidos` | `$match`, `$unwind`, 2 × `$lookup`, `$group`, `$addToSet`, `$project`, `$sort` |
-| 2 | ¿Quiénes son los clientes más valiosos y dónde están? | `pedidos` | `$match`, `$group`, `$sort`, `$limit`, `$lookup`, `$unwind`, `$project`, `$filter` |
-| 3 | ¿Qué productos se agotarán en menos de 30 días y a qué proveedor pedirles? | `pedidos` | `$match`, `$unwind`, `$group`, 3 × `$lookup`, `$project`, `$sort`, `$limit` |
-| 4 | ¿Qué transportadora entrega más rápido, con menos retrasos y a menor costo? | `pedidos` | `$match`, `$project` con `$cond`, aritmética de fechas, `$group`, `$sort` |
-| 5 | ¿Cómo evolucionan las ventas mes a mes y con qué medios pagan los clientes? | `pedidos` | `$match`, `$group` en 2 niveles, `$push`, `$sort`, `$project`, `$arrayElemAt` |
-| 6 | ¿Qué productos generan más insatisfacción, de qué categoría y proveedor? | `resenas` | `$group`, `$cond`, `$match`, `$sort`, `$limit`, 3 × `$lookup`, `$project` |
-| 7 | ¿Dónde vendemos más, dónde se cancela más y cuánto cuesta enviar allá? | `pedidos` | `$group` con `$cond`, `$addToSet`, `$avg`, `$project`, `$size`, `$sort` |
-| 8 | ¿Qué clientes compraban seguido pero llevan más de 180 días sin comprar? | `clientes` | `$lookup` con `let`/`pipeline`, `$expr`, `$unwind`, `$match`, `$project`, `$sort`, `$limit` |
+| 1 | ¿Qué proveedores generan más ventas, con qué margen y con qué calidad percibida? | `pedidos` | `$match`, `$unwind`, 2 × `$lookup`, `$group`, `$addToSet`, `$push`, `$avg`, `$project`, `$sort`, `$limit` |
+| 2 | ¿Qué pares de productos aparecen juntos en el mismo pedido con más frecuencia? | `pedidos` | `$match`, `$project`, doble `$unwind`, `$expr`, `$group`, `$sort`, `$limit`, 2 × `$lookup`, `$arrayElemAt` |
+| 3 | ¿Qué productos activos tienen stock pero no se han vendido en los últimos 180 días, y cuánto dinero hay detenido en ellos? | `productos` | `$match`, `$lookup` con `let`/`pipeline`, `$expr`, `$size`, 2 × `$lookup`, `$project`, `$multiply`, `$sort`, `$limit` |
+| 4 | ¿Las líneas con descuento venden más unidades que las que no tienen descuento, y cuánto dinero se cede? | `pedidos` | `$match`, `$unwind`, `$project` con cálculo de porcentaje, `$group`, `$avg`, `$sort` |
+| 5 | ¿Los clientes califican peor los productos cuando la entrega llegó tarde? | `pedidos` | `$match`, `$project` con aritmética de fechas, `$unwind`, `$lookup` con `let`/`pipeline` (2 condiciones), `$and`, `$group`, `$cond` |
+| 6 | ¿Los clientes que se registraron en años más recientes compran tanto como los antiguos? | `clientes` | `$lookup` con `let`/`pipeline`, `$year`, `$cond`, `$ifNull`, `$arrayElemAt`, `$group`, `$project`, `$sort` |
+| 7 | ¿Con qué método de pago se pierden más ventas por rechazos o reembolsos, y cuánto dinero representan? | `pedidos` | `$group`, `$cond`, `$eq`, `$in`, `$add`, `$project`, `$sort` (sin `$lookup`: el pago está embebido) |
+| 8 | ¿Cada cuántos días vuelve a comprar un cliente, según su segmento? | `pedidos` | `$match`, `$group` en 2 niveles, `$min`, `$max`, `$lookup`, `$unwind`, `$project` con aritmética de fechas, `$concat`, `$toString`, `$sort` |
 
-El texto completo de cada pipeline está en [`src/consultas/pipelines.ts`](src/consultas/pipelines.ts) (fuente única, usada tanto por la consola como por la interfaz) y en [`consultas/consultas_mongosh.js`](consultas/consultas_mongosh.js) en sintaxis de mongosh.
+El texto completo de cada pipeline está en [`src/consultas/pipelines.ts`](src/consultas/pipelines.ts) (fuente única, usada tanto por la consola como por la interfaz) y en [`consultas/consultas_mongosh.js`](consultas/consultas_mongosh.js) en sintaxis de mongosh. La fecha de corte del análisis es el 31 de diciembre de 2025 (el último día con datos) y una «venta válida» es un pedido en estado `Pagado`, `Enviado` o `Entregado`. Los resultados citados abajo son los de [`evidencias/resultados_consultas.md`](evidencias/resultados_consultas.md).
+
+### Qué busca cada consulta, por qué importa y qué hace
+
+**Consulta 1. Ranking de proveedores: ingresos, margen y calidad**
+- **Qué busca:** los 10 proveedores que más venden, con su margen bruto y la calificación promedio de sus productos.
+- **Por qué importa:** muestra de quién depende el negocio y con quién conviene negociar mejores costos.
+- **Impacto:** Orbis Global Ltda. (México) lidera con 668.098.910 en ingresos, pero con margen de 26,7 % y calificación de 3,26; Cóndor Andina Importaciones vende menos (264.734.980) con margen de 39,6 % y calificación de 3,66.
+- **Etapas:** `$match` deja solo ventas válidas → `$unwind` separa los ítems → `$lookup` a `productos` trae costo, proveedor y calificación → `$group` por proveedor suma ingresos, costo y unidades, y reúne productos distintos (`$addToSet`) y calificaciones (`$push`) → `$lookup` a `proveedores` trae nombre y país → `$project` calcula margen % y calificación promedio → `$sort` y `$limit` dejan el top 10.
+
+**Consulta 2. Productos que se compran juntos**
+- **Qué busca:** los pares de productos que más veces aparecen en un mismo pedido.
+- **Por qué importa:** es la base para armar combos, recomendaciones («quienes compraron X también compraron Y») y ubicar productos cercanos en la tienda.
+- **Impacto:** el par más frecuente es Bombillo Inteligente Cóndor X48 con Mouse Inalámbrico Cóndor G42 (13 veces), seguido de Bombillo Inteligente Cóndor X48 con Cafetera Zentek S68 (12 veces).
+- **Etapas:** `$match` toma pedidos no cancelados con al menos 2 ítems → `$project` copia dos veces la lista de productos del pedido (`a` y `b`) → doble `$unwind` genera todas las combinaciones → `$match` con `$expr` (`a < b`) cuenta cada par una sola vez → `$group` cuenta las veces → `$match` exige al menos 2 → `$sort` y `$limit` dejan el top 10 → 2 × `$lookup` traen los nombres → `$project` da forma al resultado.
+
+**Consulta 3. Inventario inmovilizado**
+- **Qué busca:** productos activos con stock que no tuvieron ventas (no canceladas) en los últimos 180 días, y el dinero detenido en ellos (stock × costo).
+- **Por qué importa:** el inventario sin rotación inmoviliza capital y corre riesgo de volverse obsoleto; permite decidir qué liquidar, promocionar o dejar de reponer.
+- **Impacto:** el Portátil Ultrabook Orbis A21 tiene 165 unidades paradas por 600.154.500, y los cinco primeros productos superan los 130 millones cada uno. En los datos hay 10 productos en esta situación.
+- **Etapas:** `$match` filtra activos con stock → `$lookup` con `let`/`pipeline` busca, por producto, sus ventas de los últimos 180 días (`$unwind` de ítems + `$expr` por `producto_id` + `$group`) → `$match` con `$size: 0` conserva solo los que no vendieron → 2 × `$lookup` traen categoría y proveedor → `$project` calcula `valor_inmovilizado` con `$multiply` → `$sort` y `$limit`.
+
+**Consulta 4. Efecto de los descuentos en las ventas**
+- **Qué busca:** si las líneas de venta con descuento (5 %, 10 %, 15 %) venden más unidades que las que no lo tienen, y cuánto dinero se cede en descuentos.
+- **Por qué importa:** un descuento cuesta margen; solo se justifica si aumenta el volumen.
+- **Impacto:** las unidades por línea casi no cambian (1,41 sin descuento frente a 1,37, 1,39 y 1,39 con 5 %, 10 % y 15 %) y se cedieron 201.481.030 en descuentos: en estos datos los descuentos no están aumentando las unidades vendidas.
+- **Etapas:** `$match` deja ventas válidas → `$unwind` separa los ítems → `$project` calcula el porcentaje de descuento de cada línea → `$group` por porcentaje cuenta líneas, promedia unidades y suma ingresos y descuento cedido (`$avg`, `$sum`) → `$project` redondea → `$sort` por porcentaje.
+
+**Consulta 5. Impacto de los retrasos en la satisfacción**
+- **Qué busca:** comparar las reseñas de productos entregados a tiempo con las de entregas tardías (más de 1 día después de la fecha estimada).
+- **Por qué importa:** si la logística afecta la opinión del cliente, se justifica exigir mejores tiempos a las transportadoras.
+- **Impacto:** a tiempo, 483 reseñas con promedio 3,60 y 13,5 % negativas; con retraso, 75 reseñas con promedio 3,53 y 16,0 % negativas. Hay más reseñas negativas cuando se retrasa, aunque la diferencia es moderada.
+- **Etapas:** `$match` toma envíos entregados → `$project` calcula si llegó a tiempo (aritmética de fechas) → `$unwind` separa los ítems → `$lookup` con `let`/`pipeline` cruza con `resenas` por cliente **y** producto a la vez (`$and`) → `$unwind` descarta ítems sin reseña → `$group` por «a tiempo / con retraso» promedia la calificación y cuenta las negativas (≤ 2) con `$cond` → `$project` etiqueta y calcula el porcentaje.
+
+**Consulta 6. Grupo de clientes por año de registro**
+- **Qué busca:** si los clientes registrados en años recientes compran tanto como los más antiguos.
+- **Por qué importa:** indica si la captación reciente trae clientes de igual valor o si el negocio depende de su base antigua.
+- **Impacto:** el porcentaje de clientes que compran baja de 80,7 % (registrados en 2022) a 74,2 % (2025), y el ingreso por cliente baja de 13.989.590 a 11.937.742. Hay que recordar que los registrados en 2025 tuvieron menos tiempo para comprar.
+- **Etapas:** `$lookup` con `let`/`pipeline` trae, por cliente, cuántos pedidos entregados tiene y su total → `$project` extrae el año (`$year`), marca si compró (`$cond`) y usa `$ifNull` + `$arrayElemAt` para los clientes sin compras → `$group` por año → `$project` calcula porcentaje de compradores, pedidos por cliente e ingreso por cliente → `$sort` por año.
+
+**Consulta 7. Pagos rechazados y reembolsados por método**
+- **Qué busca:** el porcentaje de pagos rechazados o reembolsados de cada método de pago y el dinero que representan.
+- **Por qué importa:** un pago fallido es una venta perdida o devuelta; señala qué método genera más fricción.
+- **Impacto:** Nequi tiene 14,0 % de pagos fallidos (8 rechazados y 7 reembolsados de 107 pedidos), el doble que los demás métodos (entre 6,6 % y 7,4 %). En dinero, PSE es donde más se pierde (137.005.470).
+- **Etapas:** `$group` por método usa `$cond` para contar rechazados y reembolsados y sumar el monto perdido (`$in`) y el aprobado → `$project` calcula el porcentaje de fallidos con `$add` → `$sort` de mayor a menor. No necesita `$lookup` porque el pago va embebido en el pedido.
+
+**Consulta 8. Frecuencia de recompra por segmento**
+- **Qué busca:** cada cuántos días vuelve a comprar un cliente (entre su primera y su última compra entregada), según su segmento. Solo cuenta clientes con 2 o más pedidos.
+- **Por qué importa:** permite programar campañas de recompra y reactivación en el momento justo para cada segmento.
+- **Impacto:** los clientes Premium recompran cada 59 días en promedio, los Frecuente cada 100 y los Regular cada 176.
+- **Etapas:** `$match` toma pedidos entregados → `$group` por cliente cuenta pedidos y obtiene su primera y última fecha (`$min`, `$max`) → `$match` exige al menos 2 pedidos → `$lookup` a `clientes` y `$unwind` traen el segmento → `$project` calcula los días entre compras → `$group` por segmento promedia y obtiene el mínimo y el máximo → `$project` redondea y arma el rango con `$concat` y `$toString` → `$sort`.
 
 ## Verificación de la migración
 

@@ -1,347 +1,230 @@
+// Consultas de negocio - TecnoHogar 
 
 
 db = db.getSiblingDB('tecnohogar');
 
-// ==========================================================================
-// CONSULTA 1: Ingresos y margen bruto por categoría (2025)
-// Pregunta: ¿Qué categorías generan más ingresos y cuáles dejan mejor margen?
-// Operadores: $match, $unwind, 2 × $lookup, $group, $addToSet, $project, $sort
-// ==========================================================================
-print('\n=== Consulta 1: Ingresos y margen bruto por categoría (2025) ===');
+
+// CONSULTA 1: Ranking de proveedores: ingresos, margen y calidad
+// Operadores: $match, $unwind, 2 × $lookup, $group, $addToSet, $push, $avg, $project, $sort, $limit
+
+print('\n=== Consulta 1: Ranking de proveedores: ingresos, margen y calidad ===');
 printjson(db.pedidos.aggregate([
-  {
-    $match: {
-      estado: { $in: ["Pagado", "Enviado", "Entregado"] },
-      fecha_pedido: { $gte: ISODate("2025-01-01T00:00:00Z"), $lt: ISODate("2026-01-01T00:00:00Z") }
-    }
-  },
+  { $match: { estado: { $in: ["Pagado", "Enviado", "Entregado"] } } },
   { $unwind: "$items" },
   {
     $lookup: { from: "productos", localField: "items.producto_id", foreignField: "_id", as: "producto" }
   },
   { $unwind: "$producto" },
   {
-    $lookup: {
-      from: "categorias",
-      localField: "producto.categoria_id",
-      foreignField: "_id",
-      as: "categoria"
-    }
-  },
-  { $unwind: "$categoria" },
-  {
     $group: {
-      _id: "$categoria.nombre",
+      _id: "$producto.proveedor_id",
       ingresos: { $sum: "$items.subtotal" },
       costo: { $sum: { $multiply: ["$items.cantidad", "$producto.costo"] } },
       unidades: { $sum: "$items.cantidad" },
-      pedidos: { $addToSet: "$_id" }
+      productos: { $addToSet: "$producto._id" },
+      calificaciones: { $push: "$producto.calificacion.promedio" }
     }
   },
+  { $lookup: { from: "proveedores", localField: "_id", foreignField: "_id", as: "proveedor" } },
+  { $unwind: "$proveedor" },
   {
     $project: {
       _id: 0,
-      categoria: "$_id",
-      ingresos: { $round: ["$ingresos", 0] },
+      proveedor: "$proveedor.nombre",
+      pais: "$proveedor.ubicacion.pais",
+      productos_vendidos: { $size: "$productos" },
       unidades: 1,
-      num_pedidos: { $size: "$pedidos" },
-      margen_bruto: { $round: [{ $subtract: ["$ingresos", "$costo"] }, 0] },
+      ingresos: { $round: ["$ingresos", 0] },
       margen_pct: {
         $round: [
           { $multiply: [{ $divide: [{ $subtract: ["$ingresos", "$costo"] }, "$ingresos"] }, 100] },
           1
         ]
-      }
+      },
+      calificacion_prom: { $round: [{ $avg: "$calificaciones" }, 2] }
     }
   },
-  { $sort: { ingresos: -1 } }
+  { $sort: { ingresos: -1 } },
+  { $limit: 10 }
 ]).toArray());
 
-// ==========================================================================
-// CONSULTA 2: Top 10 clientes por valor de compra
-// Pregunta: ¿Quiénes son los clientes más valiosos y dónde están?
-// Operadores: $match, $group, $sort, $limit, $lookup, $unwind, $project, $filter
-// ==========================================================================
-print('\n=== Consulta 2: Top 10 clientes por valor de compra ===');
+
+// CONSULTA 2: Productos que se compran juntos
+// Operadores: $match, $project, doble $unwind, $expr, $group, $sort, $limit, 2 × $lookup, $arrayElemAt
+
+print('\n=== Consulta 2: Productos que se compran juntos ===');
 printjson(db.pedidos.aggregate([
-  { $match: { estado: "Entregado" } },
-  {
-    $group: {
-      _id: "$cliente_id",
-      total_comprado: { $sum: "$resumen.total" },
-      num_pedidos: { $sum: 1 },
-      ultima_compra: { $max: "$fecha_pedido" }
-    }
-  },
-  { $sort: { total_comprado: -1 } },
+  { $match: { estado: { $ne: "Cancelado" }, "resumen.num_items": { $gte: 2 } } },
+  { $project: { a: "$items.producto_id", b: "$items.producto_id" } },
+  { $unwind: "$a" },
+  { $unwind: "$b" },
+  { $match: { $expr: { $lt: ["$a", "$b"] } } },
+  { $group: { _id: { a: "$a", b: "$b" }, veces: { $sum: 1 } } },
+  { $match: { veces: { $gte: 2 } } },
+  { $sort: { veces: -1 } },
   { $limit: 10 },
-  { $lookup: { from: "clientes", localField: "_id", foreignField: "_id", as: "cliente" } },
-  { $unwind: "$cliente" },
+  { $project: { _id: 0, a: "$_id.a", b: "$_id.b", veces: 1 } },
+  { $lookup: { from: "productos", localField: "a", foreignField: "_id", as: "pa" } },
+  { $lookup: { from: "productos", localField: "b", foreignField: "_id", as: "pb" } },
   {
     $project: {
-      _id: 0,
-      cliente_id: "$_id",
-      nombre: { $concat: ["$cliente.nombres", " ", "$cliente.apellidos"] },
-      email: "$cliente.email",
-      segmento: "$cliente.segmento",
-      ciudad_principal: {
-        $arrayElemAt: [
-          {
-            $map: {
-              input: {
-                $filter: {
-                  input: "$cliente.direcciones",
-                  as: "d",
-                  cond: { $eq: ["$$d.es_principal", true] }
-                }
-              },
-              as: "d",
-              in: "$$d.ciudad"
-            }
-          },
-          0
-        ]
-      },
-      num_pedidos: 1,
-      total_comprado: { $round: ["$total_comprado", 0] },
-      ticket_promedio: { $round: [{ $divide: ["$total_comprado", "$num_pedidos"] }, 0] },
-      ultima_compra: 1
+      producto_1: { $arrayElemAt: ["$pa.nombre", 0] },
+      producto_2: { $arrayElemAt: ["$pb.nombre", 0] },
+      veces_juntos: "$veces"
     }
   }
 ]).toArray());
 
-// ==========================================================================
-// CONSULTA 3: Productos en riesgo de quedarse sin inventario
-// Pregunta: ¿Qué productos se agotarán en menos de 30 días al ritmo de venta actual y a qué proveedor hay que pedirles?
-// Operadores: $match, $unwind, $group, 3 × $lookup, $project, $sort, $limit
-// ==========================================================================
-print('\n=== Consulta 3: Productos en riesgo de quedarse sin inventario ===');
-printjson(db.pedidos.aggregate([
-  {
-    $match: { estado: { $ne: "Cancelado" }, fecha_pedido: { $gte: ISODate("2025-10-02T00:00:00Z") } }
-  },
-  { $unwind: "$items" },
-  { $group: { _id: "$items.producto_id", unidades_90d: { $sum: "$items.cantidad" } } },
-  { $lookup: { from: "productos", localField: "_id", foreignField: "_id", as: "producto" } },
-  { $unwind: "$producto" },
-  { $match: { "producto.activo": true } },
+
+// CONSULTA 3: Inventario inmovilizado
+// Operadores: $match, $lookup con let/pipeline, $expr, $size, 2 × $lookup, $project, $multiply, $sort, $limit
+
+print('\n=== Consulta 3: Inventario inmovilizado ===');
+printjson(db.productos.aggregate([
+  { $match: { activo: true, stock: { $gt: 0 } } },
   {
     $lookup: {
-      from: "proveedores",
-      localField: "producto.proveedor_id",
-      foreignField: "_id",
-      as: "proveedor"
+      from: "pedidos",
+      let: { pid: "$_id" },
+      pipeline: [
+        {
+          $match: { fecha_pedido: { $gte: ISODate("2025-07-04T00:00:00Z") }, estado: { $ne: "Cancelado" } }
+        },
+        { $unwind: "$items" },
+        { $match: { $expr: { $eq: ["$items.producto_id", "$$pid"] } } },
+        { $group: { _id: null, unidades: { $sum: "$items.cantidad" } } }
+      ],
+      as: "ventas"
     }
   },
-  { $unwind: "$proveedor" },
+  { $match: { ventas: { $size: 0 } } },
   {
-    $lookup: {
-      from: "categorias",
-      localField: "producto.categoria_id",
-      foreignField: "_id",
-      as: "categoria"
-    }
+    $lookup: { from: "categorias", localField: "categoria_id", foreignField: "_id", as: "categoria" }
   },
   { $unwind: "$categoria" },
   {
+    $lookup: { from: "proveedores", localField: "proveedor_id", foreignField: "_id", as: "proveedor" }
+  },
+  { $unwind: "$proveedor" },
+  {
     $project: {
       _id: 0,
-      sku: "$producto.sku",
-      producto: "$producto.nombre",
+      sku: 1,
+      producto: "$nombre",
       categoria: "$categoria.nombre",
-      stock: "$producto.stock",
-      unidades_90d: 1,
-      venta_diaria: { $round: [{ $divide: ["$unidades_90d", 90] }, 2] },
-      dias_cobertura: { $round: [{ $divide: ["$producto.stock", { $divide: ["$unidades_90d", 90] }] }, 0] },
       proveedor: "$proveedor.nombre",
-      email_proveedor: "$proveedor.contacto.email",
-      pais_proveedor: "$proveedor.ubicacion.pais"
+      stock: 1,
+      costo: 1,
+      valor_inmovilizado: { $multiply: ["$stock", "$costo"] }
     }
   },
-  { $match: { dias_cobertura: { $lt: 30 } } },
-  { $sort: { dias_cobertura: 1, unidades_90d: -1 } },
+  { $sort: { valor_inmovilizado: -1 } },
   { $limit: 15 }
 ]).toArray());
 
-// ==========================================================================
-// CONSULTA 4: Desempeño de las transportadoras
-// Pregunta: ¿Qué transportadora entrega más rápido, con menos retrasos y a menor costo?
-// Operadores: $match, $project, $cond, aritmética de fechas, $group, $sort
-// ==========================================================================
-print('\n=== Consulta 4: Desempeño de las transportadoras ===');
+
+// CONSULTA 4: Efecto de los descuentos en las ventas
+// Operadores: $match, $unwind, $project con cálculo de porcentaje, $group, $avg, $sort
+
+print('\n=== Consulta 4: Efecto de los descuentos en las ventas ===');
+printjson(db.pedidos.aggregate([
+  { $match: { estado: { $in: ["Pagado", "Enviado", "Entregado"] } } },
+  { $unwind: "$items" },
+  {
+    $project: {
+      cantidad: "$items.cantidad",
+      subtotal: "$items.subtotal",
+      descuento: "$items.descuento",
+      pct: {
+        $round: [
+          {
+            $multiply: [
+              {
+                $divide: ["$items.descuento", { $multiply: ["$items.precio_unitario", "$items.cantidad"] }]
+              },
+              100
+            ]
+          },
+          0
+        ]
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$pct",
+      lineas: { $sum: 1 },
+      unidades_prom: { $avg: "$cantidad" },
+      ingresos: { $sum: "$subtotal" },
+      descuento_cedido: { $sum: "$descuento" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      descuento_pct: "$_id",
+      lineas: 1,
+      unidades_por_linea: { $round: ["$unidades_prom", 2] },
+      ingresos: { $round: ["$ingresos", 0] },
+      descuento_cedido: { $round: ["$descuento_cedido", 0] }
+    }
+  },
+  { $sort: { descuento_pct: 1 } }
+]).toArray());
+
+
+// CONSULTA 5: Impacto de los retrasos en la satisfacción
+// Operadores: $match, $project con aritmética de fechas, $unwind, $lookup con let/pipeline (2 condiciones), $and, $group, $cond
+
+print('\n=== Consulta 5: Impacto de los retrasos en la satisfacción ===');
 printjson(db.pedidos.aggregate([
   { $match: { "envio.estado": "Entregado" } },
   {
     $project: {
-      transportadora: "$envio.transportadora",
-      costo: "$envio.costo_envio",
-      dias_entrega: { $divide: [{ $subtract: ["$envio.fecha_entrega", "$envio.fecha_envio"] }, 86400000] },
-      retrasado: {
-        $cond: [
-          { $gt: [{ $subtract: ["$envio.fecha_entrega", "$envio.fecha_estimada"] }, 86400000] },
-          1,
-          0
-        ]
-      }
+      cliente_id: 1,
+      items: 1,
+      a_tiempo: { $lte: [{ $subtract: ["$envio.fecha_entrega", "$envio.fecha_estimada"] }, 86400000] }
     }
   },
+  { $unwind: "$items" },
+  {
+    $lookup: {
+      from: "resenas",
+      let: { c: "$cliente_id", p: "$items.producto_id" },
+      pipeline: [
+        {
+          $match: { $expr: { $and: [{ $eq: ["$cliente_id", "$$c"] }, { $eq: ["$producto_id", "$$p"] }] } }
+        },
+        { $project: { _id: 0, calificacion: 1 } }
+      ],
+      as: "resena"
+    }
+  },
+  { $unwind: "$resena" },
   {
     $group: {
-      _id: "$transportadora",
-      envios: { $sum: 1 },
-      dias_promedio: { $avg: "$dias_entrega" },
-      retrasos: { $sum: "$retrasado" },
-      costo_promedio: { $avg: "$costo" }
+      _id: "$a_tiempo",
+      resenas: { $sum: 1 },
+      promedio: { $avg: "$resena.calificacion" },
+      negativas: { $sum: { $cond: [{ $lte: ["$resena.calificacion", 2] }, 1, 0] } }
     }
   },
   {
     $project: {
       _id: 0,
-      transportadora: "$_id",
-      envios: 1,
-      dias_promedio: { $round: ["$dias_promedio", 1] },
-      retrasos: 1,
-      pct_retrasos: { $round: [{ $multiply: [{ $divide: ["$retrasos", "$envios"] }, 100] }, 1] },
-      costo_promedio: { $round: ["$costo_promedio", 0] }
-    }
-  },
-  { $sort: { pct_retrasos: 1 } }
-]).toArray());
-
-// ==========================================================================
-// CONSULTA 5: Ventas mensuales 2025 y método de pago preferido
-// Pregunta: ¿Cómo evolucionan las ventas mes a mes y con qué medios pagan los clientes?
-// Operadores: $match, $group (2 niveles), $push, $sort, $project, $arrayElemAt
-// ==========================================================================
-print('\n=== Consulta 5: Ventas mensuales 2025 y método de pago preferido ===');
-printjson(db.pedidos.aggregate([
-  {
-    $match: {
-      "pago.estado": "Aprobado",
-      fecha_pedido: { $gte: ISODate("2025-01-01T00:00:00Z"), $lt: ISODate("2026-01-01T00:00:00Z") }
-    }
-  },
-  {
-    $group: {
-      _id: { mes: { $month: "$fecha_pedido" }, metodo: "$pago.metodo" },
-      ventas: { $sum: "$pago.monto" },
-      pedidos: { $sum: 1 }
-    }
-  },
-  { $sort: { "_id.mes": 1, ventas: -1 } },
-  {
-    $group: {
-      _id: "$_id.mes",
-      ventas_mes: { $sum: "$ventas" },
-      pedidos_mes: { $sum: "$pedidos" },
-      metodos: { $push: { metodo: "$_id.metodo", ventas: { $round: ["$ventas", 0] }, pedidos: "$pedidos" } }
-    }
-  },
-  { $sort: { _id: 1 } },
-  {
-    $project: {
-      _id: 0,
-      mes: "$_id",
-      pedidos_mes: 1,
-      ventas_mes: { $round: ["$ventas_mes", 0] },
-      ticket_promedio: { $round: [{ $divide: ["$ventas_mes", "$pedidos_mes"] }, 0] },
-      metodo_principal: { $arrayElemAt: ["$metodos.metodo", 0] },
-      metodos: 1
+      entrega: { $cond: ["$_id", "A tiempo", "Con retraso"] },
+      resenas: 1,
+      calificacion_prom: { $round: ["$promedio", 2] },
+      pct_negativas: { $round: [{ $multiply: [{ $divide: ["$negativas", "$resenas"] }, 100] }, 1] }
     }
   }
 ]).toArray());
 
-// ==========================================================================
-// CONSULTA 6: Productos peor calificados (mínimo 10 reseñas)
-// Pregunta: ¿Qué productos generan más insatisfacción, de qué categoría y de qué proveedor vienen?
-// Operadores: $group, $cond, $match, $sort, $limit, 3 × $lookup, $project
-// ==========================================================================
-print('\n=== Consulta 6: Productos peor calificados (mínimo 10 reseñas) ===');
-printjson(db.resenas.aggregate([
-  {
-    $group: {
-      _id: "$producto_id",
-      promedio: { $avg: "$calificacion" },
-      num_resenas: { $sum: 1 },
-      negativas: { $sum: { $cond: [{ $lte: ["$calificacion", 2] }, 1, 0] } }
-    }
-  },
-  { $match: { num_resenas: { $gte: 10 } } },
-  { $sort: { promedio: 1, num_resenas: -1 } },
-  { $limit: 10 },
-  { $lookup: { from: "productos", localField: "_id", foreignField: "_id", as: "producto" } },
-  { $unwind: "$producto" },
-  {
-    $lookup: {
-      from: "categorias",
-      localField: "producto.categoria_id",
-      foreignField: "_id",
-      as: "categoria"
-    }
-  },
-  { $unwind: "$categoria" },
-  {
-    $lookup: {
-      from: "proveedores",
-      localField: "producto.proveedor_id",
-      foreignField: "_id",
-      as: "proveedor"
-    }
-  },
-  { $unwind: "$proveedor" },
-  {
-    $project: {
-      _id: 0,
-      producto: "$producto.nombre",
-      categoria: "$categoria.nombre",
-      proveedor: "$proveedor.nombre",
-      promedio: { $round: ["$promedio", 2] },
-      num_resenas: 1,
-      pct_negativas: { $round: [{ $multiply: [{ $divide: ["$negativas", "$num_resenas"] }, 100] }, 1] }
-    }
-  }
-]).toArray());
 
-// ==========================================================================
-// CONSULTA 7: Ventas, cancelaciones y costo logístico por departamento
-// Pregunta: ¿En qué regiones vendemos más, dónde se cancela más y cuánto cuesta enviar allá?
-// Operadores: $group, $cond, $addToSet, $avg, $project, $size, $sort
-// ==========================================================================
-print('\n=== Consulta 7: Ventas, cancelaciones y costo logístico por departamento ===');
-printjson(db.pedidos.aggregate([
-  {
-    $group: {
-      _id: "$direccion_envio.departamento",
-      pedidos: { $sum: 1 },
-      cancelados: { $sum: { $cond: [{ $eq: ["$estado", "Cancelado"] }, 1, 0] } },
-      ingresos: { $sum: { $cond: [{ $eq: ["$estado", "Cancelado"] }, 0, "$resumen.total"] } },
-      clientes: { $addToSet: "$cliente_id" },
-      ciudades: { $addToSet: "$direccion_envio.ciudad" },
-      costo_envio_prom: { $avg: "$envio.costo_envio" }
-    }
-  },
-  {
-    $project: {
-      _id: 0,
-      departamento: "$_id",
-      ciudades: 1,
-      pedidos: 1,
-      clientes_unicos: { $size: "$clientes" },
-      ingresos: { $round: ["$ingresos", 0] },
-      ticket_promedio: { $round: [{ $divide: ["$ingresos", { $subtract: ["$pedidos", "$cancelados"] }] }, 0] },
-      tasa_cancelacion_pct: { $round: [{ $multiply: [{ $divide: ["$cancelados", "$pedidos"] }, 100] }, 1] },
-      costo_envio_prom: { $round: ["$costo_envio_prom", 0] }
-    }
-  },
-  { $sort: { ingresos: -1 } }
-]).toArray());
+// CONSULTA 6: Grupo de clientes por año de registro
+// Operadores: $lookup con let/pipeline, $year, $cond, $ifNull, $arrayElemAt, $group, $project, $sort
 
-// ==========================================================================
-// CONSULTA 8: Clientes valiosos en riesgo de abandono
-// Pregunta: ¿Qué clientes compraban seguido pero llevan más de 180 días sin comprar?
-// Operadores: $lookup con let/pipeline, $expr, $unwind, $match, $project, $sort, $limit
-// ==========================================================================
-print('\n=== Consulta 8: Clientes valiosos en riesgo de abandono ===');
+print('\n=== Consulta 6: Grupo de clientes por año de registro ===');
 printjson(db.clientes.aggregate([
   {
     $lookup: {
@@ -349,46 +232,136 @@ printjson(db.clientes.aggregate([
       let: { cid: "$_id" },
       pipeline: [
         { $match: { $expr: { $eq: ["$cliente_id", "$$cid"] }, estado: "Entregado" } },
-        {
-          $group: {
-            _id: null,
-            pedidos: { $sum: 1 },
-            total: { $sum: "$resumen.total" },
-            ultima_compra: { $max: "$fecha_pedido" }
-          }
-        }
+        { $group: { _id: null, pedidos: { $sum: 1 }, total: { $sum: "$resumen.total" } } }
       ],
-      as: "historial"
+      as: "compras"
     }
   },
-  { $unwind: "$historial" },
   {
-    $match: {
-      "historial.pedidos": { $gte: 3 },
-      "historial.ultima_compra": { $lt: ISODate("2025-07-04T00:00:00Z") }
+    $project: {
+      anio: { $year: "$fecha_registro" },
+      compro: { $cond: [{ $gt: [{ $size: "$compras" }, 0] }, 1, 0] },
+      pedidos: { $ifNull: [{ $arrayElemAt: ["$compras.pedidos", 0] }, 0] },
+      total: { $ifNull: [{ $arrayElemAt: ["$compras.total", 0] }, 0] }
+    }
+  },
+  {
+    $group: {
+      _id: "$anio",
+      clientes: { $sum: 1 },
+      compradores: { $sum: "$compro" },
+      pedidos: { $sum: "$pedidos" },
+      ingresos: { $sum: "$total" }
     }
   },
   {
     $project: {
       _id: 0,
-      cliente_id: "$_id",
-      nombre: { $concat: ["$nombres", " ", "$apellidos"] },
-      email: 1,
-      telefono: 1,
-      segmento: 1,
-      pedidos_historicos: "$historial.pedidos",
-      total_historico: { $round: ["$historial.total", 0] },
-      ultima_compra: "$historial.ultima_compra",
-      dias_inactivo: {
+      anio_registro: "$_id",
+      clientes: 1,
+      pct_compradores: { $round: [{ $multiply: [{ $divide: ["$compradores", "$clientes"] }, 100] }, 1] },
+      pedidos_por_cliente: { $round: [{ $divide: ["$pedidos", "$clientes"] }, 2] },
+      ingreso_por_cliente: { $round: [{ $divide: ["$ingresos", "$clientes"] }, 0] }
+    }
+  },
+  { $sort: { anio_registro: 1 } }
+]).toArray());
+
+
+// CONSULTA 7: Pagos rechazados y reembolsados por método
+// Operadores: $group, $cond, $eq, $in, $add, $project, $sort, sin $lookup: el pago está embebido
+
+print('\n=== Consulta 7: Pagos rechazados y reembolsados por método ===');
+printjson(db.pedidos.aggregate([
+  {
+    $group: {
+      _id: "$pago.metodo",
+      pedidos: { $sum: 1 },
+      rechazados: { $sum: { $cond: [{ $eq: ["$pago.estado", "Rechazado"] }, 1, 0] } },
+      reembolsados: { $sum: { $cond: [{ $eq: ["$pago.estado", "Reembolsado"] }, 1, 0] } },
+      monto_perdido: {
+        $sum: { $cond: [{ $in: ["$pago.estado", ["Rechazado", "Reembolsado"]] }, "$pago.monto", 0] }
+      },
+      monto_aprobado: { $sum: { $cond: [{ $eq: ["$pago.estado", "Aprobado"] }, "$pago.monto", 0] } }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      metodo: "$_id",
+      pedidos: 1,
+      rechazados: 1,
+      reembolsados: 1,
+      pct_fallidos: {
         $round: [
           {
-            $divide: [{ $subtract: [ISODate("2025-12-31T23:59:59Z"), "$historial.ultima_compra"] }, 86400000]
+            $multiply: [{ $divide: [{ $add: ["$rechazados", "$reembolsados"] }, "$pedidos"] }, 100]
           },
-          0
+          1
+        ]
+      },
+      monto_perdido: { $round: ["$monto_perdido", 0] },
+      monto_aprobado: { $round: ["$monto_aprobado", 0] }
+    }
+  },
+  { $sort: { pct_fallidos: -1 } }
+]).toArray());
+
+
+// CONSULTA 8: Frecuencia de recompra por segmento
+// Operadores: $match, $group (2 niveles), $min, $max, $lookup, $unwind, $project con aritmética de fechas, $concat, $toString, $sort
+
+print('\n=== Consulta 8: Frecuencia de recompra por segmento ===');
+printjson(db.pedidos.aggregate([
+  { $match: { estado: "Entregado" } },
+  {
+    $group: {
+      _id: "$cliente_id",
+      pedidos: { $sum: 1 },
+      primera: { $min: "$fecha_pedido" },
+      ultima: { $max: "$fecha_pedido" }
+    }
+  },
+  { $match: { pedidos: { $gte: 2 } } },
+  { $lookup: { from: "clientes", localField: "_id", foreignField: "_id", as: "cliente" } },
+  { $unwind: "$cliente" },
+  {
+    $project: {
+      segmento: "$cliente.segmento",
+      pedidos: 1,
+      dias_entre_compras: {
+        $divide: [
+          { $divide: [{ $subtract: ["$ultima", "$primera"] }, 86400000] },
+          { $subtract: ["$pedidos", 1] }
         ]
       }
     }
   },
-  { $sort: { total_historico: -1 } },
-  { $limit: 15 }
+  {
+    $group: {
+      _id: "$segmento",
+      clientes: { $sum: 1 },
+      pedidos_prom: { $avg: "$pedidos" },
+      dias_prom: { $avg: "$dias_entre_compras" },
+      dias_min: { $min: "$dias_entre_compras" },
+      dias_max: { $max: "$dias_entre_compras" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      segmento: "$_id",
+      clientes: 1,
+      pedidos_prom: { $round: ["$pedidos_prom", 1] },
+      dias_entre_compras: { $round: ["$dias_prom", 0] },
+      rango_dias: {
+        $concat: [
+          { $toString: { $round: ["$dias_min", 0] } },
+          " a ",
+          { $toString: { $round: ["$dias_max", 0] } }
+        ]
+      }
+    }
+  },
+  { $sort: { dias_entre_compras: 1 } }
 ]).toArray());
