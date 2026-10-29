@@ -1,6 +1,4 @@
-# Taller 3: Migración de SQL Server a MongoDB · TecnoHogar
-
-**Bases de Datos II** · Taller Evaluativo No. 3 · TypeScript + Node.js
+TypeScript + Node.js
 
 Migración de la base relacional de una tienda en línea de tecnología (**TecnoHogar**) desde SQL Server hacia un modelo documental en MongoDB. El proyecto incluye el modelo relacional de origen, el proceso de migración (ETL), la verificación automática de los datos migrados, 8 consultas de negocio con el Aggregation Framework y una **interfaz web** para ejecutar todo el proceso y las consultas sin usar la consola.
 
@@ -9,7 +7,7 @@ Migración de la base relacional de una tienda en línea de tecnología (**Tecno
 | | |
 |---|---|
 | Entidades relacionales | **10** tablas, unidas por **11** llaves foráneas |
-| Registros | **5.170** (el taller exige más de 5.000) |
+| Registros | **5.170**  |
 | Colecciones MongoDB | **6** |
 | Consultas | **8** (`$lookup`, múltiples `$lookup`, `$lookup` con `let`/`pipeline`, `$match`, `$project`, `$group`, `$unwind`, `$sort`, `$limit`) |
 | Pruebas de verificación | **43** |
