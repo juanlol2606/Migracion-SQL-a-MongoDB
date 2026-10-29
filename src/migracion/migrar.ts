@@ -1,20 +1,19 @@
 /**
   
  *  1. EXTRACT   : lee las 10 tablas de SQL Server.
- *  2. TRANSFORM : convierte tipos y reorganiza las 10 tablas en 6 colecciones:
+ *  2. TRANSFORM 
  *
- *     Tablas SQL Server                         Colección     Técnica
- *     ----------------------------------------  ------------  ------------------------------------------
+ *     
  *     Categorias                                categorias    colección independiente
  *     Proveedores                               proveedores   colección independiente 
- *     Productos (+ resumen de Resenas)          productos     referencing (categoria_id, proveedor_id)
+ *     Productos                                 productos     referencing (categoria_id, proveedor_id)
  *                                                             
  *     Clientes + Direcciones                    clientes      embedding 
  *     Pedidos + DetallePedido + Pagos + Envios  pedidos       embedding (items[], pago{}, envio{})
  *                                                             + referencing (cliente_id, items.producto_id)
  *     Resenas                                   resenas       referencing (producto_id, cliente_id)
  *
- *  3. LOAD      : inserta por lotes (insertMany) y crea índices y validador.
+ *  3. LOAD      
  */
 import type { Db, Document, IndexDescription } from "mongodb";
 import type { FuenteSql } from "../db/sqlserver";
@@ -25,11 +24,11 @@ import {
 
 const LOTE = 1000;
 
-// ------------------------------------------------------------------ utilidades de tipos
+//  utilidades de tipos
 
 export const num = (v: unknown): number => Math.round(Number(v) * 100) / 100;
 
-/** DATE / DATETIME2 -> Date (BSON Date). MongoDB no tiene tipo "solo fecha". */
+
 export function fecha(v: unknown): Date {
   if (v instanceof Date) return v;
   const s = String(v);
