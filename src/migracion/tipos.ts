@@ -1,11 +1,4 @@
-/**
- * Tipos del proyecto.
- *  - Fila*      : cómo llega cada fila desde SQL Server (modelo relacional, 10 tablas).
- *  - *Doc       : cómo queda cada documento en MongoDB (modelo documental, 6 colecciones).
- * Tener ambos modelos tipados permite que el compilador verifique la transformación.
- */
-
-// =====================================================================  SQL SERVER
+// SQL SERVER
 export interface FilaCategoria { categoria_id: number; nombre: string; descripcion: string | null }
 export interface FilaProveedor {
   proveedor_id: number; nombre: string; nit: string; email: string;
@@ -48,7 +41,7 @@ export interface FilaResena {
   comentario: string | null; fecha: Date;
 }
 
-/** Resultado del EXTRACT: las 10 tablas en memoria. */
+
 export interface DatosRelacionales {
   Categorias: FilaCategoria[]; Proveedores: FilaProveedor[]; Productos: FilaProducto[];
   Clientes: FilaCliente[]; Direcciones: FilaDireccion[]; Pedidos: FilaPedido[];
@@ -59,21 +52,21 @@ export const TABLAS: (keyof DatosRelacionales)[] = [
   "Pedidos", "DetallePedido", "Pagos", "Envios", "Resenas",
 ];
 
-// =====================================================================  MONGODB
+//  MONGODB
 export interface CategoriaDoc { _id: number; nombre: string; descripcion?: string }
 
 export interface ProveedorDoc {
   _id: number; nombre: string; nit: string;
-  contacto: { email: string; telefono?: string };          // subdocumento
-  ubicacion: { ciudad: string; pais: string };              // subdocumento
+  contacto: { email: string; telefono?: string };          
+  ubicacion: { ciudad: string; pais: string };              
 }
 
 export interface ProductoDoc {
   _id: number; sku: string; nombre: string; descripcion?: string;
   precio: number; costo: number; stock: number; activo: boolean; fecha_creacion: Date;
-  categoria_id: number;                                     // REFERENCING -> categorias
-  proveedor_id: number;                                     // REFERENCING -> proveedores
-  calificacion: { promedio: number | null; total_resenas: number };  // patrón computado
+  categoria_id: number;                                     // REFERENCING 
+  proveedor_id: number;                                     // REFERENCING 
+  calificacion: { promedio: number | null; total_resenas: number };  
 }
 
 export interface DireccionEmb {
@@ -83,13 +76,13 @@ export interface DireccionEmb {
 export interface ClienteDoc {
   _id: number; nombres: string; apellidos: string; email: string; telefono?: string;
   fecha_nacimiento?: Date; fecha_registro: Date; segmento: string;
-  direcciones: DireccionEmb[];                              // EMBEDDING (Direcciones)
+  direcciones: DireccionEmb[];                              // EMBEDDING 
 }
 
 export interface ItemEmb {
   detalle_id: number;
-  producto_id: number;                                      // REFERENCING -> productos
-  sku: string; nombre: string;                              // snapshot al momento de la compra
+  producto_id: number;                                      // REFERENCING 
+  sku: string; nombre: string;                              
   cantidad: number; precio_unitario: number; descuento: number; subtotal: number;
 }
 export interface PagoEmb {
@@ -101,19 +94,19 @@ export interface EnvioEmb {
 }
 export interface PedidoDoc {
   _id: number;
-  cliente_id: number;                                       // REFERENCING -> clientes
+  cliente_id: number;                                       // REFERENCING 
   fecha_pedido: Date; estado: EstadoPedido;
-  direccion_envio: Omit<DireccionEmb, "tipo" | "es_principal">;   // snapshot
-  items: ItemEmb[];                                         // EMBEDDING (DetallePedido)
+  direccion_envio: Omit<DireccionEmb, "tipo" | "es_principal">;   
+  items: ItemEmb[];                                         // EMBEDDING 
   resumen: { num_items: number; unidades: number; subtotal: number; descuento: number; total: number };
-  pago?: PagoEmb;                                           // EMBEDDING (Pagos)
-  envio?: EnvioEmb;                                         // EMBEDDING (Envios)
+  pago?: PagoEmb;                                           // EMBEDDING 
+  envio?: EnvioEmb;                                         // EMBEDDING 
 }
 
 export interface ResenaDoc {
   _id: number;
-  producto_id: number;                                      // REFERENCING -> productos
-  cliente_id: number;                                       // REFERENCING -> clientes
+  producto_id: number;                                      // REFERENCING 
+  cliente_id: number;                                       // REFERENCING 
   calificacion: number; comentario?: string; fecha: Date;
 }
 
@@ -122,5 +115,5 @@ export interface ColeccionesMongo {
   clientes: ClienteDoc[]; pedidos: PedidoDoc[]; resenas: ResenaDoc[];
 }
 
-/** Función que reciben los procesos largos para informar su avance (consola o interfaz web). */
+
 export type Log = (mensaje: string) => void;

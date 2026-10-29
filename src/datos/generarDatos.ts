@@ -1,21 +1,12 @@
-/**
- * Generador de datos de prueba para TecnoHogarDB.
- * Produce sql/02_cargar_datos.sql con INSERTs coherentes:
- *  - fechas de pedidos entre 2024-01-01 y 2025-12-31
- *  - total del pedido = suma de sus líneas de detalle
- *  - pagos y envíos consistentes con el estado del pedido
- *  - reseñas solo de clientes que recibieron el producto
- * Usa un generador pseudoaleatorio con semilla fija: siempre produce los mismos datos.
- * Todas las fechas se manejan en UTC.
- */
+
 import fs from "fs";
 import path from "path";
 
-// ------------------------------------------------------------ aleatorio reproducible
+//  aleatorio reproducible
 class Aleatorio {
   private s: number;
   constructor(semilla: number) { this.s = semilla >>> 0; }
-  /** mulberry32: número en [0, 1) */
+  
   random(): number {
     this.s = (this.s + 0x6d2b79f5) >>> 0;
     let t = this.s;
@@ -40,7 +31,7 @@ class Aleatorio {
     }
     return copia.slice(0, k);
   }
-  /** Distribución de Pareto: pocos elementos con valores muy altos (ventas desiguales). */
+ 
   pareto(alfa: number): number { return 1 / Math.pow(1 - this.random(), 1 / alfa); }
   gauss(media: number, desv: number): number {
     const u = 1 - this.random(), v = this.random();
@@ -49,7 +40,7 @@ class Aleatorio {
 }
 
 const rnd = new Aleatorio(42);
-// Volumen calibrado para quedar apenas por encima de 5.000 registros en total (el taller pide "más de 5.000").
+
 const N_PRODUCTOS = 150, N_CLIENTES = 300, N_PEDIDOS = 700, PROB_RESENA = 0.33, LOTE = 500;
 const utc = (a: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(a, m - 1, d, h, mi, s));
 const INICIO = utc(2024, 1, 1), FIN = utc(2025, 12, 31, 23, 59, 59);
@@ -122,7 +113,7 @@ const sinTildes = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 type Valor = string | number | boolean | Date | null;
 type Tabla = { columnas: string[]; filas: Valor[][] };
 
-// ------------------------------------------------------------ generación
+//  generación
 export function generar(): Record<string, Tabla> {
   const t: Record<string, Tabla> = {};
   t.Categorias = { columnas: ["categoria_id", "nombre", "descripcion"], filas: CATEGORIAS.map(([n, d], i) => [i + 1, n, d]) };
@@ -198,7 +189,7 @@ export function generar(): Record<string, Tabla> {
 
   // Pedidos, detalle, pagos y envíos
   const cliIds = [...registro.keys()];
-  const actividad = cliIds.map(() => Math.min(rnd.pareto(1.5), 12)); // tope: evita un cliente con compras irreales
+  const actividad = cliIds.map(() => Math.min(rnd.pareto(1.5), 12)); 
   const pedidos: Valor[][] = [], detalle: Valor[][] = [], pagos: Valor[][] = [], envios: Valor[][] = [];
   const entregados: [number, number, Date][] = [];
   let detId = 1, envioId = 1;
@@ -253,7 +244,7 @@ export function generar(): Record<string, Tabla> {
     }
   }
 
-  // Segmento según número de pedidos entregados
+  
   const compras = new Map<number, number>();
   for (const p of pedidos) if (p[4] === "Entregado") compras.set(p[1] as number, (compras.get(p[1] as number) ?? 0) + 1);
   for (const c of clientes) {
@@ -261,7 +252,7 @@ export function generar(): Record<string, Tabla> {
     c[7] = n >= 8 ? "Premium" : n >= 4 ? "Frecuente" : "Regular";
   }
 
-  // Reseñas: ~45% de los productos entregados, una por cliente-producto
+  
   const calidad = new Map<number, number>();
   for (const id of precio.keys()) calidad.set(id, rnd.uniforme(2.6, 4.9));
   const resenas: Valor[][] = [];
@@ -285,7 +276,7 @@ export function generar(): Record<string, Tabla> {
   return t;
 }
 
-// ------------------------------------------------------------ escritura del script SQL
+//  escritura del script SQL
 const ORDEN = ["Categorias", "Proveedores", "Productos", "Clientes", "Direcciones", "Pedidos", "DetallePedido", "Pagos", "Envios", "Resenas"];
 
 function sqlValor(v: Valor): string {

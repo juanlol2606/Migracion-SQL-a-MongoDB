@@ -3,7 +3,7 @@ import sql from "mssql";
 import { config, recargarConfig, RUTA_ENV } from "../config";
 import type { Log } from "../migracion/tipos";
 
-/** Fuente de datos relacional mínima: ejecutar un SELECT y devolver filas. */
+
 export interface FuenteSql {
   consultar<T = Record<string, unknown>>(consulta: string): Promise<T[]>;
   cerrar(): Promise<void>;
@@ -23,12 +23,12 @@ function configuracion(database: string, maxConexiones = 10): sql.config {
       instanceName: config.sql.instance,
       encrypt: config.sql.encrypt,
       trustServerCertificate: true,
-      useUTC: true, // las fechas se leen y escriben en UTC (igual que en MongoDB)
+      useUTC: true, 
     },
   };
 }
 
-/** Agrega a los errores de conexión más comunes una explicación de cómo resolverlos. */
+
 function explicar(e: unknown): Error {
   const msg = e instanceof Error ? e.message : String(e);
   if (/Login failed/i.test(msg)) {
@@ -53,7 +53,7 @@ async function conectar(cfg: sql.config): Promise<sql.ConnectionPool> {
   }
 }
 
-/** Conecta a la base TecnoHogarDB. */
+
 export async function conectarSqlServer(): Promise<FuenteSql> {
   const pool = await conectar(configuracion(config.sql.database));
   return {
@@ -65,7 +65,7 @@ export async function conectarSqlServer(): Promise<FuenteSql> {
   };
 }
 
-/** Comprueba la conexión y devuelve la versión del servidor. */
+
 export async function probarSqlServer(): Promise<string> {
   const pool = await conectar(configuracion("master", 1));
   try {
@@ -76,10 +76,7 @@ export async function probarSqlServer(): Promise<string> {
   }
 }
 
-/**
- * Ejecuta un script .sql que usa separadores GO (como en SSMS / sqlcmd).
- * Usa UNA sola conexión, para que instrucciones como USE se mantengan entre lotes.
- */
+
 export async function ejecutarScript(ruta: string, log: Log): Promise<void> {
   const texto = fs.readFileSync(ruta, "utf8");
   const lotes = texto.split(/^\s*GO\s*;?\s*$/gim).map((l) => l.trim()).filter((l) => l.replace(/\/\*[\s\S]*?\*\//g, "").trim());
@@ -88,7 +85,7 @@ export async function ejecutarScript(ruta: string, log: Log): Promise<void> {
     let i = 0;
     let baseActual = "";
     for (const lote of lotes) {
-      // Se antepone el último USE a cada lote para no depender de que el pool reutilice la misma conexión.
+      
       const uso = lote.match(/^\s*USE\s+\[?(\w+)\]?\s*;?\s*$/im);
       if (uso) baseActual = uso[1];
       await pool.request().batch(baseActual && !uso ? `USE [${baseActual}];\n${lote}` : lote);

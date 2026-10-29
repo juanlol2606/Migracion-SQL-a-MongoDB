@@ -3,7 +3,7 @@ import { config } from "../config";
 
 let cliente: MongoClient | null = null;
 
-/** Devuelve la base de datos de MongoDB, reutilizando una única conexión. */
+
 export async function conectarMongo(): Promise<Db> {
   if (!cliente) {
     cliente = new MongoClient(config.mongo.uri, { serverSelectionTimeoutMS: 5000 });
